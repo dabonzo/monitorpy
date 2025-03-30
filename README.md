@@ -10,6 +10,7 @@ MonitorPy is a flexible and extensible monitoring system designed to check websi
 
 - Website availability and content monitoring
 - SSL certificate validity and expiration checks
+- Mail server connectivity and authentication testing
 - Plugin-based architecture for extensibility
 - Command-line interface for easy use
 - Detailed logging and reporting
@@ -62,6 +63,9 @@ monitorpy website https://www.example.com
 
 # Check an SSL certificate
 monitorpy ssl www.example.com
+
+# Check a mail server
+monitorpy mail example.com --protocol smtp --basic-check --resolve-mx
 ```
 
 ## Documentation
