@@ -78,6 +78,27 @@ For more detailed documentation, see the [docs](../docs/) directory:
 - [Writing Plugins](../docs/writing_plugins.md)
 - [Examples](../docs/examples.md)
 
+## Testing
+
+MonitorPy includes a comprehensive test suite to ensure reliable operation across different environments and scenarios. The tests use pytest and cover all core components and plugins.
+
+### Running Tests
+
+```bash
+# Install test dependencies
+pip install pytest pytest-cov
+
+# Run all tests
+pytest monitorpy/tests/
+
+# Generate coverage report
+pytest --cov=monitorpy monitorpy/tests/
+```
+
+### Test Documentation
+
+For detailed information about the testing approach and test suite organization, see the [Testing Documentation](docs/testing/index.md).
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

@@ -97,9 +97,54 @@ To see all available monitoring plugins:
 monitorpy list
 ```
 
+## Running Tests
+
+MonitorPy includes a comprehensive test suite that verifies the functionality of all components. Running these tests is a good way to ensure that your installation is working correctly.
+
+### Prerequisites
+
+To run the tests, you'll need pytest:
+
+```bash
+pip install pytest pytest-cov
+```
+
+### Running All Tests
+
+```bash
+# From the project root
+pytest monitorpy/tests/
+```
+
+### Running Specific Tests
+
+```bash
+# Run tests for a specific component
+pytest monitorpy/tests/test_website.py
+
+# Run a specific test class
+pytest monitorpy/tests/test_core.py::TestCheckResult
+
+# Run a specific test method
+pytest monitorpy/tests/test_core.py::TestCheckResult::test_status_check_methods
+```
+
+### Generating Coverage Reports
+
+```bash
+# Generate a coverage report
+pytest --cov=monitorpy monitorpy/tests/
+
+# Generate an HTML coverage report
+pytest --cov=monitorpy --cov-report=html monitorpy/tests/
+```
+
+For more information about the testing approach and test suite organization, see the [Testing Documentation](testing/index.md).
+
 ## Next Steps
 
 - See [CLI Usage](cli_usage.md) for more detailed command-line options
 - Learn about [Configuration](configuration.md) options for monitoring checks
 - Explore [Examples](examples.md) for common monitoring scenarios
+- Read about [Testing](testing/index.md) the monitoring system
 - Learn how to [Write Your Own Plugins](writing_plugins.md) to extend MonitorPy's functionality

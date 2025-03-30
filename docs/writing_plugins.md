@@ -276,3 +276,93 @@ To make your plugin available through the command-line interface, update the `cl
 ## Documentation
 
 Don't forget to document your plugin by adding information to the appropriate documentation files, such as updating the examples and configuration documents.
+
+## Testing Your Plugin
+
+Creating thorough tests for your plugin is essential to ensure it works reliably. MonitorPy uses pytest for testing. Your plugin tests should verify both success scenarios and error handling.
+
+### Creating a Test File
+
+Create a new test file in the `tests` directory to verify your plugin works correctly:
+
+```python
+# tests/test_my_plugin.py
+import unittest
+from unittest.mock import patch, Mock
+from monitorpy.core import run_check, CheckResult
+from monitorpy.plugins.my_plugin import MyCustomPlugin
+
+class TestMyCustomPlugin(unittest.TestCase):
+    def setUp(self):
+        """Set up test fixtures."""
+        self.base_config = {
+            "required_param1": "value1",
+            "required_param2": "value2"
+        }
+    
+    def test_get_required_config(self):
+        """Test that the plugin correctly reports required parameters."""
+        required = MyCustomPlugin.get_required_config()
+        self.assertIsInstance(required, list)
+        self.assertIn("required_param1", required)
+        self.assertIn("required_param2", required)
+    
+    def test_validate_config_valid(self):
+        """Test validation with valid configuration."""
+        plugin = MyCustomPlugin(self.base_config)
+        self.assertTrue(plugin.validate_config())
+    
+    def test_validate_config_missing_required(self):
+        """Test validation with missing required parameters."""
+        plugin = MyCustomPlugin({"required_param1": "value1"})
+        self.assertFalse(plugin.validate_config())
+    
+    # Add more tests for your plugin's specific functionality
+    # ...
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+### Mocking External Dependencies
+
+When your plugin interacts with external systems (APIs, databases, network services), you should mock these dependencies in your tests:
+
+```python
+@patch('requests.get')
+def test_api_check_success(self, mock_get):
+    """Test successful API check."""
+    # Configure mock
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"status": "ok", "data": [1, 2, 3]}
+    mock_get.return_value = mock_response
+    
+    # Run check
+    result = run_check("my_custom_plugin", self.base_config)
+    
+    # Verify result
+    self.assertEqual(result.status, CheckResult.STATUS_SUCCESS)
+    self.assertIn("successful", result.message)
+```
+
+### Test Coverage
+
+Your tests should cover:
+
+1. Configuration validation (required and optional parameters)
+2. Success scenarios
+3. Error conditions and error handling
+4. Edge cases specific to your plugin's functionality
+
+### Examples
+
+For examples of effective plugin tests, see the existing test files:
+
+- [Website Plugin Tests](testing/website_plugin_tests.md)
+- [SSL Certificate Plugin Tests](testing/ssl_plugin_tests.md)
+- [Mail Server Plugin Tests](testing/mail_plugin_tests.md)
+
+These provide patterns you can follow when writing tests for your own plugins.
+
+For more information about the testing approach, see the [Testing Documentation](testing/index.md).
