@@ -133,12 +133,12 @@ class SSLCertificatePlugin(MonitorPlugin):
             logger.debug(f"SSL check completed in {response_time:.4f}s")
 
             # Check certificate expiration
-            expiration = datetime.strptime(cert["notAfter"], "%b %d %H:%M:%S %Y %Z")
+            expiration = datetime.strptime(cert["notAfter"], "%b %d %H:%M:%S %Y GMT")
             now = datetime.now()
             days_until_expiration = (expiration - now).days
 
             # Check certificate validity period
-            not_before = datetime.strptime(cert["notBefore"], "%b %d %H:%M:%S %Y %Z")
+            not_before = datetime.strptime(cert["notBefore"], "%b %d %H:%M:%S %Y GMT")
             is_valid_period = not_before <= now <= expiration
 
             # Get certificate details
@@ -149,15 +149,15 @@ class SSLCertificatePlugin(MonitorPlugin):
             if not is_valid_period:
                 status = CheckResult.STATUS_ERROR
                 if now < not_before:
-                    message = f"Certificate not yet valid. Valid from {not_before.isoformat()}"
+                    message = f"Certificate not yet valid" # Remove the rest of the message or make it a separate part
                 else:
                     message = f"Certificate expired on {expiration.isoformat()}"
             elif days_until_expiration <= critical_days:
                 status = CheckResult.STATUS_ERROR
-                message = f"Certificate expires very soon: {days_until_expiration} days left (expires on {expiration.isoformat()})"
+                message = f"Certificate expires very soon - {days_until_expiration} days left"
             elif days_until_expiration <= warning_days:
                 status = CheckResult.STATUS_WARNING
-                message = f"Certificate expiration approaching: {days_until_expiration} days left (expires on {expiration.isoformat()})"
+                message = f"Certificate expiration approaching - {days_until_expiration} days left"
             else:
                 status = CheckResult.STATUS_SUCCESS
                 message = f"Certificate valid until {expiration.isoformat()} ({days_until_expiration} days remaining)"
