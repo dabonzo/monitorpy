@@ -1,0 +1,148 @@
+# Configuration
+
+This document describes the configuration options for each monitoring plugin in MonitorPy.
+
+## General Configuration Structure
+
+Each plugin in MonitorPy accepts a configuration dictionary that controls its behavior. When using the command-line interface, these configurations are specified as command-line arguments. If you're using MonitorPy programmatically, you'll pass these configurations as dictionaries.
+
+## Website Status Plugin
+
+The website status plugin (`website_status`) monitors website availability and content.
+
+### Required Configuration
+
+| Parameter | Description |
+|-----------|-------------|
+| `url` | URL to check (must start with http:// or https://) |
+
+### Optional Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `timeout` | Request timeout in seconds | 30 |
+| `expected_status` | Expected HTTP status code | 200 |
+| `method` | HTTP method (GET, POST, etc.) | GET |
+| `headers` | Dictionary of HTTP headers to send | {} |
+| `body` | Request body for POST/PUT requests | None |
+| `auth_username` | Username for basic authentication | None |
+| `auth_password` | Password for basic authentication | None |
+| `verify_ssl` | Whether to verify SSL certificates | True |
+| `follow_redirects` | Whether to follow HTTP redirects | True |
+| `expected_content` | Content that should be present in the response | None |
+| `unexpected_content` | Content that should NOT be present in the response | None |
+
+### Examples
+
+Basic configuration:
+```python
+config = {
+    "url": "https://www.example.com",
+    "timeout": 10,
+    "expected_status": 200
+}
+```
+
+Content check configuration:
+```python
+config = {
+    "url": "https://www.example.com",
+    "expected_content": "Welcome to Example",
+    "unexpected_content": "Error"
+}
+```
+
+Authentication configuration:
+```python
+config = {
+    "url": "https://private.example.com",
+    "auth_username": "user",
+    "auth_password": "pass"
+}
+```
+
+Custom headers and POST request:
+```python
+config = {
+    "url": "https://api.example.com/data",
+    "method": "POST",
+    "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer token123"
+    },
+    "body": '{"key": "value"}',
+    "expected_status": 201
+}
+```
+
+## SSL Certificate Plugin
+
+The SSL certificate plugin (`ssl_certificate`) checks SSL certificate validity and expiration.
+
+### Required Configuration
+
+| Parameter | Description |
+|-----------|-------------|
+| `hostname` | Hostname or URL to check |
+
+### Optional Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `port` | Port number for the SSL connection | 443 |
+| `timeout` | Connection timeout in seconds | 30 |
+| `warning_days` | Days before expiration to trigger a warning | 30 |
+| `critical_days` | Days before expiration to trigger a critical alert | 14 |
+| `check_chain` | Whether to check certificate chain details | False |
+| `verify_hostname` | Whether to verify the hostname in the certificate | True |
+
+### Examples
+
+Basic configuration:
+```python
+config = {
+    "hostname": "www.example.com",
+    "timeout": 10
+}
+```
+
+Custom thresholds configuration:
+```python
+config = {
+    "hostname": "www.example.com",
+    "warning_days": 60,
+    "critical_days": 30
+}
+```
+
+Non-standard port configuration:
+```python
+config = {
+    "hostname": "secure.example.com",
+    "port": 8443
+}
+```
+
+## Using Configuration Programmatically
+
+When using MonitorPy from your code, you can pass configurations directly to the `run_check` function:
+
+```python
+from monitorpy import run_check
+
+# Configure the check
+config = {
+    "url": "https://www.example.com",
+    "timeout": 10,
+    "expected_content": "Welcome"
+}
+
+# Run the check
+result = run_check("website_status", config)
+
+# Use the result
+if result.is_success():
+    print(f"Check passed: {result.message}")
+else:
+    print(f"Check failed: {result.message}")
+```
