@@ -1,0 +1,28 @@
+# Core dependencies
+requests>=2.25.0
+urllib3>=1.26.0
+certifi>=2020.11.8
+
+# Mail server monitoring
+dnspython>=2.1.0        # For MX record resolution
+
+# CLI interface
+colorama>=0.4.4         # For colored terminal output (cross-platform)
+
+# Testing
+pytest>=6.2.0
+pytest-cov>=2.10.1
+mock>=4.0.0
+
+# Development
+black>=21.5b2           # Code formatting
+flake8>=3.9.0           # Linting
+isort>=5.8.0            # Import sorting
+mypy>=0.812             # Type checking
+
+# Documentation
+sphinx>=4.0.0           # For generating documentation
+sphinx-rtd-theme>=0.5.0 # ReadTheDocs theme
+
+# Optional - For running in daemon mode
+schedule>=1.1.0         # Simple job scheduling

@@ -8,10 +8,11 @@ import logging
 from typing import Dict, Any, List, Optional
 
 from monitorpy.core import registry, run_check
-from monitorpy.utils import setup_logging, format_result
+from monitorpy.utils import setup_logging, format_result, get_logger
 from monitorpy.utils.formatting import ColorFormatter
 import monitorpy.plugins  # Import to register all plugins
 
+logger = get_logger("cli")
 
 def parse_header(header_str: str) -> Optional[tuple]:
     """
@@ -100,6 +101,31 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     ssl_parser.add_argument("--no-verify-hostname", action="store_true", help="Disable hostname verification")
     ssl_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
     ssl_parser.add_argument("--json", action="store_true", help="Output results as JSON")
+
+
+        # Mail server check command
+    mail_parser = subparsers.add_parser(
+        "mail",
+        help="Check mail server connectivity and functionality",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    mail_parser.add_argument("hostname", help="Mail server hostname")
+    mail_parser.add_argument("--protocol", choices=["smtp", "imap", "pop3"], default="smtp", help="Mail protocol to check")
+    mail_parser.add_argument("--port", type=int, help="Server port (defaults to standard port for protocol)")
+    mail_parser.add_argument("--username", help="Username for authentication")
+    mail_parser.add_argument("--password", help="Password for authentication")
+    mail_parser.add_argument("--ssl", action="store_true", help="Use SSL connection")
+    mail_parser.add_argument("--tls", action="store_true", help="Use TLS connection (SMTP only)")
+    mail_parser.add_argument("--timeout", type=int, default=30, help="Connection timeout in seconds")
+    mail_parser.add_argument("--send-test", action="store_true", help="Send test email (SMTP only)")
+    mail_parser.add_argument("--from", dest="from_email", help="From email address (for test email)")
+    mail_parser.add_argument("--to", dest="to_email", help="To email address (for test email)")
+    mail_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
+    mail_parser.add_argument("--json", action="store_true", help="Output results as JSON")
+    mail_parser.add_argument("--basic-check", action="store_true",
+                         help="Perform basic connectivity check without authentication")
+    mail_parser.add_argument("--resolve-mx", action="store_true",
+                         help="Resolve MX records for domain and check the highest priority server")
 
     return parser
 
@@ -208,6 +234,89 @@ def handle_ssl_command(args) -> int:
 
     return 0 if result.is_success() else (1 if result.is_warning() else 2)
 
+def handle_mail_command(args) -> int:
+    """
+    Handle the 'mail' command to check a mail server.
+
+    Args:
+        args: Command-line arguments
+
+    Returns:
+        int: Exit code (0 for success, non-zero for errors)
+    """
+    config = {
+        "hostname": args.hostname,
+        "protocol": args.protocol,
+        "timeout": args.timeout
+    }
+
+    # Add SSL/TLS configuration
+    if args.ssl:
+        config["use_ssl"] = True
+
+    if args.protocol == "smtp" and args.tls:
+        config["use_tls"] = True
+
+    # Add custom port if specified
+    if args.port:
+        config["port"] = args.port
+
+    # Handle MX resolution
+    if args.resolve_mx:
+        config["resolve_mx"] = True
+
+        # Check if we need to install dnspython
+        try:
+            import dns.resolver
+        except ImportError:
+            print("Warning: The dnspython package is required for MX resolution.")
+            print("Please install it with: pip install dnspython")
+            return 2
+
+    # Determine if we're doing a basic check or authenticated check
+    if args.basic_check:
+        # Basic check - don't include credentials
+        logger.info(f"Performing basic {args.protocol.upper()} server check for {args.hostname}")
+    else:
+        # Include authentication if provided
+        if args.username:
+            config["username"] = args.username
+
+        if args.password:
+            config["password"] = args.password
+
+        # Only include test email settings if doing SMTP with creds
+        if args.protocol == "smtp" and args.send_test and args.username and args.password:
+            config["test_send"] = True
+
+            if args.from_email:
+                config["from_email"] = args.from_email
+            else:
+                # Default from email if not provided
+                config["from_email"] = args.username if "@" in args.username else f"{args.username}@example.com"
+
+            if args.to_email:
+                config["to_email"] = args.to_email
+            else:
+                # Default to same address if not provided
+                config["to_email"] = config["from_email"]
+
+            config["subject"] = "MonitorPy Mail Test"
+            config["message"] = "This is a test email sent by MonitorPy to verify mail server functionality."
+
+            logger.info(f"Will send test email from {config['from_email']} to {config['to_email']}")
+
+    # Run the appropriate check
+    result = run_check("mail_server", config)
+
+    # Output the results
+    if args.json:
+        print(json.dumps(result.to_dict(), indent=2))
+    else:
+        print(format_result(result, args.verbose))
+
+    return 0 if result.is_success() else (1 if result.is_warning() else 2)
+
 
 def main() -> int:
     """
@@ -230,6 +339,8 @@ def main() -> int:
         return handle_website_command(args)
     elif args.command == "ssl":
         return handle_ssl_command(args)
+    elif args.command == "mail":
+        return handle_mail_command(args)
     else:
         parser.print_help()
         return 1
