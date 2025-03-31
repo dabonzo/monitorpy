@@ -72,6 +72,7 @@ Get machine-readable JSON output:
 ```bash
 monitorpy ssl example.com --json
 ```
+These command-line options correspond to configuration parameters documented in detail in the [Advanced Configuration Guide](../reference/advanced_configuration.md).
 
 ## Example Output
 

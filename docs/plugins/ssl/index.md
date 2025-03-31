@@ -58,7 +58,10 @@ else:
 - [Configuration Options](configuration.md) - Detailed configuration parameter reference
 - [Usage Examples](examples.md) - Common usage patterns and scenarios
 - [Advanced Usage](advanced.md) - Advanced features and techniques
+- For advanced configuration options and techniques, see the [Advanced Configuration Guide](../../reference/advanced_configuration.md).
+
 
 ## Requirements
 
 The SSL certificate monitoring plugin uses Python's built-in SSL library and does not require additional dependencies.
+

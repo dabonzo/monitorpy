@@ -118,6 +118,7 @@ Get machine-readable JSON output:
 ```bash
 monitorpy mail mail.example.com --protocol smtp --json
 ```
+These command-line options correspond to configuration parameters documented in detail in the [Advanced Configuration Guide](../reference/advanced_configuration.md).
 
 ## Example Output
 

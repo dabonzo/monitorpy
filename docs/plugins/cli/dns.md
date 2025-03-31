@@ -91,6 +91,7 @@ monitorpy dns example.com --type A --value 192.0.2.1 --check-propagation --check
 ```bash
 monitorpy dns example.com --check-propagation --json
 ```
+These command-line options correspond to configuration parameters documented in detail in the [Advanced Configuration Guide](../reference/advanced_configuration.md).
 
 ## Example Output
 

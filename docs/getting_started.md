@@ -96,6 +96,7 @@ To see all available monitoring plugins:
 ```bash
 monitorpy list
 ```
+For basic monitoring, the default configuration options are sufficient. When you're ready to explore more advanced configurations, see the [Advanced Configuration Guide](reference/advanced_configuration.md).
 
 ## Running Tests
 

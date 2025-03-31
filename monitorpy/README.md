@@ -75,13 +75,14 @@ monitorpy dns example.com --type A --check-propagation
 
 ## Documentation
 
-For more detailed documentation, see the [docs](../docs/) directory:
+For detailed documentation, see the [docs](docs/) directory:
 
-- [Getting Started](../docs/getting_started.md)
-- [CLI Usage](../docs/cli_usage.md)
-- [Configuration](../docs/configuration.md)
-- [Writing Plugins](../docs/writing_plugins.md)
-- [Examples](../docs/examples.md)
+- [Getting Started](docs/getting_started.md) - Installation and basic usage
+- [CLI Usage](docs/cli_usage.md) - Command-line interface reference
+- [Configuration](docs/configuration.md) - Basic configuration options
+- [Advanced Configuration](docs/reference/advanced_configuration.md) - Comprehensive configuration guide
+- [Examples](docs/examples.md) - Common usage patterns
+- [Writing Plugins](docs/writing_plugins.md) - Extending MonitorPy with custom plugins
 
 ## Testing
 

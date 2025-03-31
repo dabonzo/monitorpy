@@ -56,8 +56,10 @@ MonitorPy provides a powerful command-line interface for all monitoring function
 - [Mail Server Commands](cli/mail.md) - Mail server monitoring commands
 - [DNS Commands](cli/dns.md) - DNS monitoring commands
 
+
 ## Reference
 
+- [Advanced Configuration Guide](reference/advanced_configuration.md) - Comprehensive configuration options and techniques
 - [Configuration Reference](reference/configuration.md) - Complete configuration options
 - [CLI Reference](reference/cli_commands.md) - All command-line options
 - [Examples Reference](reference/examples.md) - Common usage patterns
