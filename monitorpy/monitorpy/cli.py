@@ -14,6 +14,7 @@ import monitorpy.plugins  # Import to register all plugins
 
 logger = get_logger("cli")
 
+
 def parse_header(header_str: str) -> Optional[tuple]:
     """
     Parse a header string in the format 'Name: Value'.
@@ -102,15 +103,15 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     ssl_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
     ssl_parser.add_argument("--json", action="store_true", help="Output results as JSON")
 
-
-        # Mail server check command
+    # Mail server check command
     mail_parser = subparsers.add_parser(
         "mail",
         help="Check mail server connectivity and functionality",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     mail_parser.add_argument("hostname", help="Mail server hostname")
-    mail_parser.add_argument("--protocol", choices=["smtp", "imap", "pop3"], default="smtp", help="Mail protocol to check")
+    mail_parser.add_argument("--protocol", choices=["smtp", "imap", "pop3"], default="smtp",
+                             help="Mail protocol to check")
     mail_parser.add_argument("--port", type=int, help="Server port (defaults to standard port for protocol)")
     mail_parser.add_argument("--username", help="Username for authentication")
     mail_parser.add_argument("--password", help="Password for authentication")
@@ -123,9 +124,37 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     mail_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
     mail_parser.add_argument("--json", action="store_true", help="Output results as JSON")
     mail_parser.add_argument("--basic-check", action="store_true",
-                         help="Perform basic connectivity check without authentication")
+                             help="Perform basic connectivity check without authentication")
     mail_parser.add_argument("--resolve-mx", action="store_true",
-                         help="Resolve MX records for domain and check the highest priority server")
+                             help="Resolve MX records for domain and check the highest priority server")
+
+    dns_parser = subparsers.add_parser(
+        "dns",
+        help="Check DNS records and propagation",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    dns_parser.add_argument("domain", help="Domain name to check")
+    dns_parser.add_argument("--type", default="A", dest="record_type",
+                            help="DNS record type (A, AAAA, MX, CNAME, TXT, NS, etc.)")
+    dns_parser.add_argument("--value", dest="expected_value",
+                            help="Expected record value")
+    dns_parser.add_argument("--subdomain", help="Subdomain to check (e.g., 'www')")
+    dns_parser.add_argument("--nameserver", help="Specific nameserver to query")
+    dns_parser.add_argument("--timeout", type=int, default=10, help="Query timeout in seconds")
+    dns_parser.add_argument("--check-propagation", action="store_true",
+                            help="Check DNS propagation across multiple resolvers")
+    dns_parser.add_argument("--resolvers", nargs="+",
+                            help="Custom DNS resolvers to check (space-separated list of IP addresses)")
+    dns_parser.add_argument("--threshold", type=float, default=80,
+                            help="Propagation threshold percentage (0-100)")
+    dns_parser.add_argument("--check-authoritative", action="store_true",
+                            help="Check if response is from an authoritative server")
+    dns_parser.add_argument("--check-dnssec", action="store_true",
+                            help="Check DNSSEC validation")
+    dns_parser.add_argument("--max-workers", type=int, default=10,
+                            help="Maximum number of concurrent workers for propagation checks")
+    dns_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
+    dns_parser.add_argument("--json", action="store_true", help="Output results as JSON")
 
     return parser
 
@@ -234,6 +263,7 @@ def handle_ssl_command(args) -> int:
 
     return 0 if result.is_success() else (1 if result.is_warning() else 2)
 
+
 def handle_mail_command(args) -> int:
     """
     Handle the 'mail' command to check a mail server.
@@ -318,6 +348,66 @@ def handle_mail_command(args) -> int:
     return 0 if result.is_success() else (1 if result.is_warning() else 2)
 
 
+def handle_dns_command(args) -> int:
+    """
+    Handle the 'dns' command to check DNS records.
+
+    Args:
+        args: Command-line arguments
+
+    Returns:
+        int: Exit code (0 for success, non-zero for errors)
+    """
+    # Check if dnspython is installed
+    try:
+        import dns.resolver
+    except ImportError:
+        print("Error: The dnspython package is required for DNS checks.")
+        print("Please install it with: pip install dnspython")
+        return 2
+
+    config = {
+        "domain": args.domain,
+        "record_type": args.record_type,
+        "timeout": args.timeout
+    }
+
+    # Add optional configuration
+    if args.expected_value:
+        config["expected_value"] = args.expected_value
+
+    if args.subdomain:
+        config["subdomain"] = args.subdomain
+
+    if args.nameserver:
+        config["nameserver"] = args.nameserver
+
+    if args.check_propagation:
+        config["check_propagation"] = True
+        config["propagation_threshold"] = args.threshold
+
+        if args.resolvers:
+            config["resolvers"] = args.resolvers
+
+    if args.check_authoritative:
+        config["check_authoritative"] = True
+
+    if args.check_dnssec:
+        config["check_dnssec"] = True
+
+    if args.max_workers:
+        config["max_workers"] = args.max_workers
+
+    result = run_check("dns_record", config)
+
+    if args.json:
+        print(json.dumps(result.to_dict(), indent=2))
+    else:
+        print(format_result(result, args.verbose))
+
+    return 0 if result.is_success() else (1 if result.is_warning() else 2)
+
+
 def main() -> int:
     """
     Main entry point for the command-line interface.
@@ -341,6 +431,9 @@ def main() -> int:
         return handle_ssl_command(args)
     elif args.command == "mail":
         return handle_mail_command(args)
+    # Add the DNS command handler here:
+    elif args.command == "dns":
+        return handle_dns_command(args)
     else:
         parser.print_help()
         return 1

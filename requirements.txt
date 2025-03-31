@@ -1,0 +1,4 @@
+monitorpy~=0.0.1
+requests~=2.32.3
+setuptools~=75.8.0
+dnspython~=2.7.0
