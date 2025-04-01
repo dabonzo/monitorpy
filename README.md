@@ -85,6 +85,10 @@ For more detailed documentation, see the [docs](docs/) directory:
 - [API Documentation](monitorpy/monitorpy/api/README.md)
 - [Testing](docs/testing/index.md)
 
+### Deployment
+- [Architecture Notes](docs/development/architecture_notes.md)
+- [Production Deployment](docs/development/production_deployment.md)
+
 ## Monitoring Capabilities
 
 ### Website Monitoring
