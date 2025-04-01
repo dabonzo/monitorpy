@@ -22,7 +22,7 @@ The MonitorPy application should implement a flexible database approach:
 
 ### API Integration
 
-MonitorPy should implement a REST API as the primary integration point:
+MonitorPy implements a REST API as the primary integration point:
 
 1. **API-First Design**:
    - Create a comprehensive REST API for all MonitorPy operations
@@ -46,22 +46,53 @@ MonitorPy should implement a REST API as the primary integration point:
 ## Development Roadmap
 
 ### Phase 1: Core API Development
-1. Create Flask API wrapper around monitoring functionality
-2. Implement SQLite database integration
-3. Add basic authentication for API access
-4. Create Docker setup for development environment
+1. ~~Create Flask API wrapper around monitoring functionality~~ (completed)
+2. ~~Implement SQLite database integration~~ (completed)
+3. ~~Add basic authentication for API access~~ (completed)
+4. ~~Create Docker setup for development environment~~ (completed)
 
-### Phase 2: Database Flexibility
+### Phase 2: API Modernization
+1. ✅ Replace Flask with FastAPI for improved performance and developer experience
+2. ✅ Add OpenAPI documentation with Swagger UI
+3. ✅ Implement strong type validation with Pydantic
+4. ✅ Support async/await for better performance under load
+
+### Phase 3: Database Flexibility
 1. Add support for PostgreSQL and MySQL
 2. Implement database configuration options
 3. Create migration tools for database schema changes
 4. Add data retention functionality
 
-### Phase 3: Integration Examples
+### Phase 4: Integration Examples
 1. Develop Laravel client library/example
 2. Create simple dashboard frontend
 3. Add WebSocket support for real-time updates
 4. Document integration patterns for various frameworks
+
+## FastAPI Architecture
+
+The FastAPI implementation follows modern API development practices:
+
+1. **Clear Separation of Concerns**:
+   - Routes: API endpoint definitions
+   - Models: Pydantic schemas and SQLAlchemy models
+   - Dependencies: Reusable components for authentication, database, etc.
+   - Configuration: Environment-based settings
+
+2. **Schema Validation**:
+   - Request validation with Pydantic models
+   - Response serialization with Pydantic models
+   - Type safety throughout the codebase
+
+3. **Dependency Injection**:
+   - Database session management
+   - Authentication and authorization
+   - Reusable dependencies for common operations
+
+4. **Performance**:
+   - Async support for I/O-bound operations
+   - Efficient database queries
+   - Parallel execution of monitoring checks
 
 ## Docker Development Environment
 

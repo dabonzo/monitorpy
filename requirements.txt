@@ -9,7 +9,7 @@ dnspython>=2.1.0        # For MX record resolution
 # CLI interface
 colorama>=0.4.4         # For colored terminal output (cross-platform)
 
-# API dependencies
+# API dependencies - Flask
 flask>=2.0.0            # Web framework
 flask-sqlalchemy>=2.5.0 # ORM integration
 flask-migrate>=3.0.0    # Database migrations
@@ -19,7 +19,15 @@ marshmallow-sqlalchemy>=0.26.0 # SQLAlchemy integration for marshmallow
 flask-cors>=3.0.10      # Cross-origin resource sharing
 gunicorn>=20.1.0        # WSGI production server
 
+# FastAPI dependencies
+fastapi>=0.95.0         # Modern, high-performance web framework
+uvicorn>=0.21.0         # ASGI server
+pydantic>=1.10.7        # Data validation and settings management
+python-jose>=3.3.0      # JWT authentication
+python-multipart>=0.0.6 # Form data parsing
+
 # Database drivers
+sqlalchemy>=1.4.0       # SQL toolkit and ORM
 psycopg2-binary>=2.9.0  # PostgreSQL driver
 pymysql>=1.0.2          # MySQL driver
 
