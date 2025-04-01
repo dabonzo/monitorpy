@@ -68,6 +68,7 @@ MonitorPy provides a powerful command-line interface for all monitoring function
 
 - [Architecture](development/architecture.md) - System architecture overview
 - [Plugin System](development/plugin_system.md) - How the plugin system works
+- [Docker Usage](development/docker_usage.md) - Using MonitorPy with Docker
 - [Testing](development/testing/index.md) - Testing the monitoring system
 
 ## Project Information
