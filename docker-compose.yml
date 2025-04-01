@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=sqlite:////data/monitorpy.db
+      - SECRET_KEY=dev_secret_key_change_me_in_production
+      - JWT_SECRET_KEY=dev_jwt_key_change_me_in_production
+      - AUTH_REQUIRED=false
+    volumes:
+      - ./:/app
+      - monitorpy_data:/data
+    depends_on:
+      - db
+    networks:
+      - monitorpy_network
+
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=monitorpy
+      - POSTGRES_PASSWORD=monitorpy
+      - POSTGRES_DB=monitorpy
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - monitorpy_network
+
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+    networks:
+      - monitorpy_network
+    depends_on:
+      - db
+
+networks:
+  monitorpy_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  monitorpy_data:

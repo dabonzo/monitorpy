@@ -14,6 +14,8 @@ MonitorPy is a flexible and extensible monitoring system designed to check websi
 - **DNS Monitoring**: Validate DNS records, check propagation, and verify DNSSEC
 - **Enhanced Plugin Framework**: Easily create custom monitoring plugins with helper methods
 - **Comprehensive CLI**: Command-line interface for all monitoring functions
+- **RESTful API**: Complete API for integration with other systems and services
+- **Flexible Database Storage**: Optional database integration with support for SQLite, PostgreSQL, and MySQL
 - **Detailed Reporting**: Get in-depth information about monitoring results
 - **Plugin Template System**: Start new plugins quickly with pre-implemented functionality
 
@@ -80,6 +82,7 @@ For more detailed documentation, see the [docs](docs/) directory:
 ### Development
 - [Writing Plugins](docs/writing_plugins.md)
 - [Sample Plugin](docs/plugins/sample/index.md)
+- [API Documentation](monitorpy/monitorpy/api/README.md)
 - [Testing](docs/testing/index.md)
 
 ## Monitoring Capabilities

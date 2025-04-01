@@ -9,6 +9,20 @@ dnspython>=2.1.0        # For MX record resolution
 # CLI interface
 colorama>=0.4.4         # For colored terminal output (cross-platform)
 
+# API dependencies
+flask>=2.0.0            # Web framework
+flask-sqlalchemy>=2.5.0 # ORM integration
+flask-migrate>=3.0.0    # Database migrations
+flask-jwt-extended>=4.2.0 # JWT authentication
+flask-marshmallow>=0.14.0 # Schema validation
+marshmallow-sqlalchemy>=0.26.0 # SQLAlchemy integration for marshmallow
+flask-cors>=3.0.10      # Cross-origin resource sharing
+gunicorn>=20.1.0        # WSGI production server
+
+# Database drivers
+psycopg2-binary>=2.9.0  # PostgreSQL driver
+pymysql>=1.0.2          # MySQL driver
+
 # Testing
 pytest>=6.2.0
 pytest-cov>=2.10.1

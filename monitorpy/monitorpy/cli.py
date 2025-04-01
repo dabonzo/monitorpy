@@ -5,6 +5,7 @@ Command-line interface for the monitorpy package.
 import argparse
 import json
 import sys
+import os
 import logging
 from typing import Optional
 
@@ -66,6 +67,25 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         "list",
         help="List available plugins",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    
+    # API server command
+    api_parser = subparsers.add_parser(
+        "api",
+        help="Run the MonitorPy API server",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    api_parser.add_argument(
+        "--host", type=str, default="0.0.0.0", help="Host to bind to"
+    )
+    api_parser.add_argument(
+        "--port", type=int, default=5000, help="Port to bind to"
+    )
+    api_parser.add_argument(
+        "--debug", action="store_true", help="Run in debug mode"
+    )
+    api_parser.add_argument(
+        "--database", type=str, help="Database URL (defaults to SQLite)"
     )
 
     # Check website command
@@ -461,6 +481,51 @@ def handle_mail_command(args) -> int:
     return 0 if result.is_success() else (1 if result.is_warning() else 2)
 
 
+def handle_api_command(args) -> int:
+    """
+    Handle the 'api' command to run the API server.
+
+    Args:
+        args: Command-line arguments
+
+    Returns:
+        int: Exit code (0 for success, non-zero for errors)
+    """
+    try:
+        # Set environment variables from command-line arguments
+        if args.database:
+            os.environ['DATABASE_URL'] = args.database
+        
+        # Set development mode
+        os.environ['FLASK_ENV'] = 'development' if args.debug else 'production'
+        
+        print(f"Starting MonitorPy API server on {args.host}:{args.port}...")
+        print("Press Ctrl+C to stop the server")
+        
+        # Import API app
+        from monitorpy.api import create_app
+        from monitorpy.api.config import get_config
+        
+        # Create the Flask app
+        app = create_app(get_config())
+        
+        # Run the Flask app
+        app.run(host=args.host, port=args.port, debug=args.debug)
+        
+        return 0
+    
+    except ImportError:
+        print("Error: API dependencies are not installed.")
+        print("Please install the required packages:")
+        print("  pip install flask flask-sqlalchemy flask-migrate flask-jwt-extended")
+        print("  pip install flask-marshmallow marshmallow-sqlalchemy flask-cors gunicorn")
+        return 1
+    
+    except Exception as e:
+        print(f"Error starting API server: {str(e)}")
+        return 1
+
+
 def handle_dns_command(args) -> int:
     """
     Handle the 'dns' command to check DNS records.
@@ -544,9 +609,10 @@ def main() -> int:
         return handle_ssl_command(args)
     elif args.command == "mail":
         return handle_mail_command(args)
-    # Add the DNS command handler here:
     elif args.command == "dns":
         return handle_dns_command(args)
+    elif args.command == "api":
+        return handle_api_command(args)
     else:
         parser.print_help()
         return 1
