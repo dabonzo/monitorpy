@@ -103,6 +103,38 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     api_parser.add_argument(
         "--database", type=str, help="Database URL (defaults to SQLite)"
     )
+    
+    # User management command
+    user_parser = subparsers.add_parser(
+        "user",
+        help="User management",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    user_subparsers = user_parser.add_subparsers(dest="user_action", help="User action")
+    
+    # Create user command
+    create_user_parser = user_subparsers.add_parser("create", help="Create a new user")
+    create_user_parser.add_argument("--username", required=True, help="Username for login")
+    create_user_parser.add_argument("--email", required=True, help="User email address")
+    create_user_parser.add_argument("--password", required=True, help="User password")
+    create_user_parser.add_argument("--admin", action="store_true", help="Give admin privileges")
+    
+    # List users command
+    list_users_parser = user_subparsers.add_parser("list", help="List all users")
+    list_users_parser.add_argument("--show-keys", action="store_true", help="Show API keys")
+    
+    # Delete user command
+    delete_user_parser = user_subparsers.add_parser("delete", help="Delete a user")
+    delete_user_parser.add_argument("username", help="Username to delete")
+    
+    # Reset password command
+    reset_pw_parser = user_subparsers.add_parser("reset-password", help="Reset user password")
+    reset_pw_parser.add_argument("username", help="Username to reset password for")
+    reset_pw_parser.add_argument("--password", required=True, help="New password")
+    
+    # Generate API key command
+    gen_key_parser = user_subparsers.add_parser("generate-key", help="Generate new API key")
+    gen_key_parser.add_argument("username", help="Username to generate key for")
 
     # Batch check command
     batch_parser = subparsers.add_parser(
@@ -1048,6 +1080,113 @@ def main():
             return 1
         except Exception as e:
             print(f"Error starting API: {str(e)}")
+            return 1
+            
+    elif args.command == "user":
+        try:
+            from monitorpy.api import create_app
+            from monitorpy.api.extensions import db
+            from monitorpy.api.models.user import User
+            from monitorpy.api.config import get_config
+
+            # Create app context for database operations
+            app = create_app(get_config())
+            
+            with app.app_context():
+                # Handle user management commands
+                if args.user_action == "create":
+                    # Check if user already exists
+                    if User.query.filter_by(username=args.username).first():
+                        print(f"Error: Username {args.username} already exists")
+                        return 1
+                    
+                    if User.query.filter_by(email=args.email).first():
+                        print(f"Error: Email {args.email} already exists")
+                        return 1
+                        
+                    # Create new user
+                    user = User(
+                        username=args.username, 
+                        email=args.email, 
+                        password=args.password, 
+                        is_admin=args.admin
+                    )
+                    
+                    # Generate API key
+                    api_key = user.generate_api_key()
+                    
+                    # Save to database
+                    db.session.add(user)
+                    db.session.commit()
+                    
+                    is_admin_str = "with admin privileges" if args.admin else "without admin privileges"
+                    print(f"User {args.username} ({args.email}) created successfully {is_admin_str}")
+                    print(f"API Key: {api_key}")
+                    
+                elif args.user_action == "list":
+                    users = User.query.all()
+                    
+                    if not users:
+                        print("No users found")
+                        return 0
+                        
+                    print(f"Found {len(users)} users:")
+                    for user in users:
+                        admin_status = " (admin)" if user.is_admin else ""
+                        print(f"- {user.username} ({user.email}){admin_status}")
+                        if args.show_keys and user.api_key:
+                            print(f"  API Key: {user.api_key}")
+                            
+                elif args.user_action == "delete":
+                    user = User.query.filter_by(username=args.username).first()
+                    
+                    if not user:
+                        print(f"Error: User {args.username} not found")
+                        return 1
+                        
+                    db.session.delete(user)
+                    db.session.commit()
+                    
+                    print(f"User {args.username} deleted successfully")
+                    
+                elif args.user_action == "reset-password":
+                    user = User.query.filter_by(username=args.username).first()
+                    
+                    if not user:
+                        print(f"Error: User {args.username} not found")
+                        return 1
+                        
+                    user.set_password(args.password)
+                    db.session.commit()
+                    
+                    print(f"Password for user {args.username} reset successfully")
+                    
+                elif args.user_action == "generate-key":
+                    user = User.query.filter_by(username=args.username).first()
+                    
+                    if not user:
+                        print(f"Error: User {args.username} not found")
+                        return 1
+                        
+                    api_key = user.generate_api_key()
+                    db.session.commit()
+                    
+                    print(f"New API key for user {args.username} generated successfully")
+                    print(f"API Key: {api_key}")
+                    
+                else:
+                    print("Error: Unknown user action")
+                    return 1
+                    
+            return 0
+            
+        except ImportError as e:
+            print(f"Error: {str(e)}")
+            print("Make sure the API dependencies are installed:")
+            print("  pip install flask flask-sqlalchemy flask-migrate flask-cors")
+            return 1
+        except Exception as e:
+            print(f"Error in user management: {str(e)}")
             return 1
 
     elif args.command == "batch":

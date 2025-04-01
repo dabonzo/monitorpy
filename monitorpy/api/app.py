@@ -10,7 +10,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
 
-from monitorpy.api.extensions import db
+from monitorpy.api.extensions import db, jwt
 from monitorpy.api.config import Config
 from monitorpy.utils.logging import get_logger
 
@@ -33,6 +33,7 @@ def create_app(config_class=Config):
     # Initialize extensions
     CORS(app)
     db.init_app(app)
+    jwt.init_app(app)
     Migrate(app, db)
     
     # Register blueprints
@@ -41,12 +42,14 @@ def create_app(config_class=Config):
     from monitorpy.api.routes.plugins import bp as plugins_bp
     from monitorpy.api.routes.health import bp as health_bp
     from monitorpy.api.routes.batch import bp as batch_bp
+    from monitorpy.api.routes.auth import bp as auth_bp
     
     app.register_blueprint(checks_bp, url_prefix='/api/v1/checks')
     app.register_blueprint(results_bp, url_prefix='/api/v1/results')
     app.register_blueprint(plugins_bp, url_prefix='/api/v1/plugins')
     app.register_blueprint(health_bp, url_prefix='/api/v1/health')
     app.register_blueprint(batch_bp, url_prefix='/api/v1/batch')
+    app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
     
     # Create database tables if needed
     with app.app_context():

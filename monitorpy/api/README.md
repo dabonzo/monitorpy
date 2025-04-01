@@ -79,10 +79,76 @@ Authentication is optional and can be enabled by setting `AUTH_REQUIRED=true`. W
 - JWT token authentication (`Authorization: Bearer <token>`)
 - API key authentication (`X-API-Key: <api-key>`)
 
-To create a user:
+### Managing Users
+
+Use the CLI to manage users. These commands work both inside and outside of Docker:
+
+#### Create a User
 
 ```bash
-flask user create --username admin --email admin@example.com --password secure_password --admin
+# Using the Python module directly
+python -m monitorpy.cli user create --username admin --email admin@example.com --password secure_password --admin
+
+# Inside Docker container
+docker-compose exec api python -m monitorpy.cli user create --username admin --email admin@example.com --password secure_password --admin
+```
+
+#### List Users
+
+```bash
+python -m monitorpy.cli user list
+# Show API keys
+python -m monitorpy.cli user list --show-keys
+```
+
+#### Generate API Key
+
+```bash
+python -m monitorpy.cli user generate-key admin
+```
+
+#### Reset Password
+
+```bash
+python -m monitorpy.cli user reset-password admin --password new_password
+```
+
+#### Delete User
+
+```bash
+python -m monitorpy.cli user delete admin
+```
+
+### Logging In
+
+To get a JWT token for authentication:
+
+```bash
+curl -X POST http://localhost:5000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"password"}'
+```
+
+This returns a JWT token and user data that can be used for subsequent requests:
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "...",
+    "username": "admin",
+    "email": "admin@example.com",
+    "is_admin": true,
+    "created_at": "...",
+    "updated_at": "..."
+  }
+}
+```
+
+Use the token in requests:
+
+```bash
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." http://localhost:5000/api/v1/checks
 ```
 
 ## API Examples

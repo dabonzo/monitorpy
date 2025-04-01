@@ -1,6 +1,6 @@
 # Configuration
 
-This document describes the configuration options for each monitoring plugin in MonitorPy.
+This document describes the configuration options for each monitoring plugin in MonitorPy and general system configuration.
 
 ## General Configuration Structure
 
@@ -145,4 +145,86 @@ if result.is_success():
     print(f"Check passed: {result.message}")
 else:
     print(f"Check failed: {result.message}")
+```
+
+## API Authentication Configuration
+
+MonitorPy API supports optional authentication. When enabled, API endpoints require either JWT tokens or API keys.
+
+### Enabling Authentication
+
+Authentication is disabled by default in development but enabled in production. To control this:
+
+1. Set the environment variable:
+   ```bash
+   export AUTH_REQUIRED=true
+   ```
+
+2. Or in the docker-compose.yml:
+   ```yaml
+   environment:
+     - AUTH_REQUIRED=true
+   ```
+
+3. In configuration files:
+   ```yaml
+   api:
+     auth_required: true
+     jwt_secret_key: your_secret_key
+     secret_key: your_flask_secret_key
+   ```
+
+### User Management
+
+MonitorPy includes CLI commands for user management:
+
+#### Create a User
+
+```bash
+# Create regular user
+python -m monitorpy.cli user create --username user1 --email user1@example.com --password password
+
+# Create admin user
+python -m monitorpy.cli user create --username admin --email admin@example.com --password password --admin
+
+# In Docker container
+docker-compose exec api python -m monitorpy.cli user create --username admin --email admin@example.com --password password --admin
+```
+
+#### List, Update, and Delete Users
+
+```bash
+# List all users
+python -m monitorpy.cli user list
+
+# Show API keys
+python -m monitorpy.cli user list --show-keys
+
+# Reset password
+python -m monitorpy.cli user reset-password username --password new_password
+
+# Generate API key
+python -m monitorpy.cli user generate-key username
+
+# Delete user
+python -m monitorpy.cli user delete username
+```
+
+### Using Authentication
+
+When authentication is enabled, you can access the API using either JWT tokens or API keys:
+
+```bash
+# Get JWT token
+curl -X POST http://localhost:5000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"password"}'
+
+# Use JWT token in subsequent requests
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  http://localhost:5000/api/v1/checks
+
+# Alternatively, use API key
+curl -H "X-API-Key: your-api-key" \
+  http://localhost:5000/api/v1/checks
 ```
