@@ -24,14 +24,20 @@ This is a simple web application to demonstrate the MonitorPy API functionality.
    ./setup.sh
    ```
 
-2. Start both the MonitorPy API and the demo app:
+2. Start the demo app with either the mock API or real API:
 
    ```bash
-   # Start with default ports
+   # Option 1: Start with mock API (simpler, in-memory storage)
    ./start.sh
    
-   # Or specify custom ports
+   # Option 2: Start with real API (production-ready, database storage)
+   ./start_with_real_api.sh
+   
+   # Customize ports if needed
    ./start.sh --api-port 5000 --app-port 8080
+   
+   # Specify database URL for real API
+   ./start_with_real_api.sh --database "sqlite:///path/to/database.db"
    ```
 
 2. Open your browser and navigate to:
@@ -47,7 +53,12 @@ This demo app provides a simple interface for:
 - **Result Viewing**: See recent check results in a table
 - **Real-time Testing**: Run checks on demand and see the results immediately
 
-> **Note:** For demonstration purposes, this app uses a simplified mock API that simulates the full MonitorPy API functionality. The mock API provides the same endpoints but uses in-memory storage instead of a database.
+> **Note:** The demo app can run with either:
+>
+> 1. **Mock API** (default): Uses a simplified API that simulates the full functionality with in-memory storage.
+> 2. **Real API**: Uses the actual MonitorPy API implementation with a database backend.
+>
+> Use `./start.sh` for the mock API or `./start_with_real_api.sh` for the real API.
 
 ## Implementation Details
 
