@@ -1,5 +1,6 @@
-# Database Configuration Guide:
+# MonitorPy Docker Configuration Guide:
 # 
+# DATABASE OPTIONS:
 # This docker-compose file supports three database options:
 # 1. SQLite (default): No additional configuration needed
 # 2. PostgreSQL: Uncomment the PostgreSQL DATABASE_URL in the api environment
@@ -9,7 +10,15 @@
 # To switch databases:
 # - For PostgreSQL: Uncomment the PostgreSQL DATABASE_URL (already set up by default)
 # - For MySQL: Uncomment the mysql service, mysql_data volume, mysql dependency,
-#   and MySQL DATABASE_URL in the api service environment 
+#   and MySQL DATABASE_URL in the api service environment
+#
+# REDIS CONFIGURATION:
+# The setup includes Redis for caching and background tasks:
+# - Redis is enabled by default with the redis container
+# - Cache configuration is controlled through environment variables:
+#   - USE_REDIS_CACHE=true|false: Enable/disable caching (default: true)
+#   - CACHE_EXPIRATION=300: Cache TTL in seconds (default: 300)
+# - Redis data is persisted in the redis_data volume
 
 services:
   api:

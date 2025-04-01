@@ -10,6 +10,7 @@ MonitorPy provides a modern REST API built with FastAPI that exposes all monitor
 - Pagination, filtering, and sorting for list endpoints
 - Support for parallel check execution
 - Async/await for improved performance
+- Redis integration for caching and background tasks
 
 ## Base URL
 
@@ -378,3 +379,14 @@ Interactive API documentation is available at:
 - ReDoc: `/api/v1/redoc`
 
 These documentation interfaces allow you to explore and test the API directly in your browser.
+
+## Redis Integration
+
+The API integrates with Redis for enhanced performance and reliability:
+
+- Response caching for frequently accessed data
+- Health check endpoint reports Redis availability status
+- Graceful degradation when Redis is unavailable
+- Type-safe caching with Pydantic models
+
+For details on Redis usage, see [Redis Usage Documentation](./reference/redis_usage.md).
