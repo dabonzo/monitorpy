@@ -6,268 +6,143 @@ One of the key features of MonitorPy is its extensible plugin architecture. This
 
 MonitorPy plugins are Python classes that inherit from the `MonitorPlugin` base class and implement specific methods. Each plugin is registered with a unique name that users can reference when running checks.
 
-## Creating a Basic Plugin
+## Enhanced Plugin Framework
 
-Here's a step-by-step guide to creating a new monitoring plugin:
+The MonitorPy v2 framework includes enhanced base classes and helper methods to make plugin development easier:
 
-### 1. Create a New Python Module
+- `MonitorPlugin`: The abstract base class that all plugins must inherit from
+- `PluginTemplate`: A template class with pre-implemented common functionality
+- Helper methods for creating check results, timing operations, and config validation
 
-Create a new Python file in the `monitorpy/monitorpy/plugins` directory. For example, `dns_plugin.py`.
+## Creating a Plugin Using the Template
 
-### 2. Import Required Components
-
-```python
-from typing import Dict, Any, List
-import time
-import dns.resolver  # Example: using dnspython library
-
-from monitorpy.core import MonitorPlugin, CheckResult, register_plugin
-from monitorpy.utils import get_logger
-
-# Configure logging
-logger = get_logger("plugins.dns")
-```
-
-### 3. Define Your Plugin Class
-
-Create a class that inherits from `MonitorPlugin` and implements the required methods:
+The easiest way to create a new plugin is to inherit from the `PluginTemplate` class:
 
 ```python
-@register_plugin("dns_record")
-class DNSRecordPlugin(MonitorPlugin):
-    """
-    Plugin for checking DNS records.
-    
-    Verifies that a domain has the expected DNS records.
-    """
+from monitorpy.core.plugin_base import PluginTemplate
+from monitorpy.core.registry import register_plugin
+from monitorpy.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
+@register_plugin("my_custom_check")
+class MyCustomPlugin(PluginTemplate):
+    """My custom monitoring plugin that checks XYZ."""
     
     @classmethod
-    def get_required_config(cls) -> List[str]:
-        """Get required configuration parameters."""
-        return ["domain", "record_type"]
+    def get_required_config(cls):
+        return ["target", "threshold"]
     
-    @classmethod
-    def get_optional_config(cls) -> List[str]:
-        """Get optional configuration parameters."""
-        return ["expected_value", "nameserver", "timeout"]
-    
-    def validate_config(self) -> bool:
-        """Validate that required configuration parameters are present and valid."""
-        # Check that all required keys are present
-        if not all(key in self.config for key in self.get_required_config()):
-            return False
+    def _execute_check(self):
+        # Get config values with validation
+        target = self.get_config_value("target")
+        threshold = self.get_config_value(
+            "threshold", 
+            validator=lambda x: isinstance(x, (int, float)) and x > 0
+        )
         
-        # Validate record type
-        record_type = self.config.get("record_type", "").upper()
-        valid_types = ["A", "AAAA", "MX", "CNAME", "TXT", "NS", "SOA", "SRV"]
-        if record_type not in valid_types:
-            return False
+        # Implement your check logic here
+        # ...
         
-        return True
-    
-    def run_check(self) -> CheckResult:
-        """Run the DNS record check."""
-        domain = self.config["domain"]
-        record_type = self.config["record_type"].upper()
-        expected_value = self.config.get("expected_value")
-        nameserver = self.config.get("nameserver")
-        timeout = self.config.get("timeout", 30)
-        
-        try:
-            logger.debug(f"Checking DNS record {record_type} for {domain}")
-            start_time = time.time()
-            
-            # Create a resolver
-            resolver = dns.resolver.Resolver()
-            if nameserver:
-                resolver.nameservers = [nameserver]
-            resolver.timeout = timeout
-            
-            # Query the DNS record
-            answers = resolver.resolve(domain, record_type)
-            
-            end_time = time.time()
-            response_time = end_time - start_time
-            
-            # Check the results
-            if not answers:
-                return CheckResult(
-                    CheckResult.STATUS_ERROR,
-                    f"No {record_type} records found for {domain}",
-                    response_time
-                )
-            
-            # Convert answers to strings for comparison and display
-            answer_values = [str(rdata) for rdata in answers]
-            
-            # Check against expected value if provided
-            if expected_value and expected_value not in answer_values:
-                return CheckResult(
-                    CheckResult.STATUS_ERROR,
-                    f"Expected value '{expected_value}' not found in {record_type} records for {domain}",
-                    response_time,
-                    {"records": answer_values}
-                )
-            
-            # Return success result
-            return CheckResult(
-                CheckResult.STATUS_SUCCESS,
-                f"DNS {record_type} record check successful for {domain}",
-                response_time,
-                {"records": answer_values}
-            )
-            
-        except dns.resolver.NXDOMAIN:
-            return CheckResult(
-                CheckResult.STATUS_ERROR,
-                f"Domain {domain} does not exist",
-                time.time() - start_time
-            )
-        except dns.resolver.NoAnswer:
-            return CheckResult(
-                CheckResult.STATUS_ERROR,
-                f"No {record_type} records found for {domain}",
-                time.time() - start_time
-            )
-        except dns.resolver.Timeout:
-            return CheckResult(
-                CheckResult.STATUS_ERROR,
-                f"Timeout resolving {record_type} records for {domain}",
-                timeout
-            )
-        except Exception as e:
-            logger.exception(f"Error checking DNS records for {domain}")
-            return CheckResult(
-                CheckResult.STATUS_ERROR,
-                f"Error checking DNS records: {str(e)}",
-                time.time() - start_time,
-                {"error": str(e), "error_type": type(e).__name__}
-            )
+        # Return an appropriate result
+        return self.success_result(
+            f"Check successful for {target}",
+            response_time,
+            {"details": "your data here"}
+        )
 ```
 
-### 4. Register the Plugin
+## Key Helper Methods
 
-Import your plugin in the `monitorpy/monitorpy/plugins/__init__.py` file:
+The framework provides several helper methods to simplify plugin development:
+
+### Configuration Management
 
 ```python
-from monitorpy.plugins.website import WebsiteStatusPlugin
-from monitorpy.plugins.ssl_certificate import SSLCertificatePlugin
-from monitorpy.plugins.dns_plugin import DNSRecordPlugin  # Add your plugin here
+# Get config with validation and default value
+value = self.get_config_value(
+    "key", 
+    default="default_value",
+    validator=lambda x: isinstance(x, str) and len(x) > 0
+)
+
+# Basic validation of all required config keys
+is_valid = self.basic_config_validation()
+```
+
+### Result Creation
+
+```python
+# Create success result
+result = self.success_result("All systems normal", 0.5, {"data": "value"})
+
+# Create warning result
+result = self.warning_result("Performance degraded", 3.2, {"data": "value"})
+
+# Create error result
+result = self.error_result("Service unavailable", 2.1, {"error": "details"})
+```
+
+### Execution Timing
+
+```python
+# Automatically time the execution of a function
+result, duration = self.timed_execution(my_function, arg1, arg2, kwarg1=value)
+```
+
+## Complete Plugin Example
+
+A complete example plugin is available at:
+`monitorpy/monitorpy/plugins/sample_template.py`
+
+This example demonstrates proper configuration validation, error handling, result creation, and other best practices.
+
+## Plugin Registration
+
+All plugins must be registered with the system to be discoverable. Use the `@register_plugin` decorator:
+
+```python
+from monitorpy.core.registry import register_plugin
+
+@register_plugin("unique_plugin_name")
+class MyPlugin(MonitorPlugin):
+    # ...
+```
+
+Then import your plugin in the `monitorpy/monitorpy/plugins/__init__.py` file:
+
+```python
+from monitorpy.plugins.my_plugin import MyPlugin
 
 __all__ = [
-    'WebsiteStatusPlugin',
-    'SSLCertificatePlugin',
-    'DNSRecordPlugin',  # Add your plugin here
+    # other plugins
+    'MyPlugin',
 ]
 ```
 
-## Required Methods
+## Required Implementation
 
-When creating a plugin, you must implement the following methods:
+At minimum, your plugin must implement:
 
-### `get_required_config()`
+1. `get_required_config()`: Returns a list of required configuration keys
+2. `validate_config()`: Validates the configuration (or use `basic_config_validation()`)
+3. `run_check()`: Executes the check and returns a result (or override `_execute_check()` if using `PluginTemplate`)
 
-This class method returns a list of configuration keys that are required for the plugin to function. The plugin will fail validation if any of these keys are missing from the configuration.
+## Plugin Testing
 
-```python
-@classmethod
-def get_required_config(cls) -> List[str]:
-    return ["key1", "key2"]
-```
-
-### `get_optional_config()`
-
-This class method returns a list of configuration keys that are optional for the plugin. These are used for documentation purposes.
-
-```python
-@classmethod
-def get_optional_config(cls) -> List[str]:
-    return ["optional_key1", "optional_key2"]
-```
-
-### `validate_config()`
-
-This method checks if the provided configuration is valid. It should return `True` if the configuration is valid, and `False` otherwise.
-
-```python
-def validate_config(self) -> bool:
-    # Check for required keys
-    if not all(key in self.config for key in self.get_required_config()):
-        return False
-    
-    # Additional validation checks
-    if some_condition:
-        return False
-    
-    return True
-```
-
-### `run_check()`
-
-This is the main method that performs the monitoring check. It should return a `CheckResult` object.
-
-```python
-def run_check(self) -> CheckResult:
-    # Perform the check
-    # ...
-    
-    # Return result
-    return CheckResult(
-        status=CheckResult.STATUS_SUCCESS,  # or WARNING or ERROR
-        message="Human-readable message",
-        response_time=execution_time,
-        raw_data={"additional": "data"}
-    )
-```
+Create a test file in the `tests` directory to verify your plugin works correctly. See the [Testing Documentation](testing/index.md) for details.
 
 ## Best Practices
 
 When developing plugins, follow these best practices:
 
-1. **Proper Error Handling**: Catch all exceptions and return appropriate error messages.
-
-2. **Detailed Logging**: Use the logger to record important events and errors.
-
-3. **Accurate Timing**: Measure and report the response time for checks.
-
-4. **Descriptive Messages**: Provide clear, informative messages in the CheckResult.
-
-5. **Thorough Validation**: Validate the configuration thoroughly to prevent runtime errors.
-
-6. **Comprehensive Documentation**: Document the plugin's purpose, requirements, and behavior.
-
-7. **Stateless Design**: Plugins should be stateless and not rely on external state between runs.
-
-## Testing Your Plugin
-
-Create a test file in the `tests` directory to verify your plugin works correctly:
-
-```python
-import unittest
-from monitorpy.core import run_check
-
-class TestDNSPlugin(unittest.TestCase):
-    def test_basic_dns_check(self):
-        config = {
-            "domain": "example.com",
-            "record_type": "A"
-        }
-        
-        result = run_check("dns_record", config)
-        self.assertTrue(result.is_success())
-    
-    def test_invalid_config(self):
-        # Missing required config
-        config = {
-            "domain": "example.com"
-        }
-        
-        result = run_check("dns_record", config)
-        self.assertTrue(result.is_error())
-
-if __name__ == '__main__':
-    unittest.main()
-```
+1. **Proper Error Handling**: Catch all exceptions and return appropriate error messages
+2. **Detailed Logging**: Use the logger to record important events and errors
+3. **Accurate Timing**: Measure and report the response time for checks
+4. **Descriptive Messages**: Provide clear, informative messages in the CheckResult
+5. **Thorough Validation**: Validate the configuration thoroughly to prevent runtime errors
+6. **Comprehensive Documentation**: Document the plugin's purpose, requirements, and behavior
+7. **Stateless Design**: Plugins should be stateless and not rely on external state between runs
 
 ## Adding CLI Support
 
@@ -275,94 +150,16 @@ To make your plugin available through the command-line interface, update the `cl
 
 ## Documentation
 
-Don't forget to document your plugin by adding information to the appropriate documentation files, such as updating the examples and configuration documents.
+Don't forget to document your plugin by adding information to the appropriate documentation files, including:
 
-## Testing Your Plugin
+- Create a configuration guide in `docs/plugins/your_plugin/configuration.md`
+- Add examples in `docs/plugins/your_plugin/examples.md`
+- Document CLI usage in `docs/plugins/cli/your_plugin.md`
 
-Creating thorough tests for your plugin is essential to ensure it works reliably. MonitorPy uses pytest for testing. Your plugin tests should verify both success scenarios and error handling.
+## Need Help?
 
-### Creating a Test File
+For more detailed examples and guidance:
 
-Create a new test file in the `tests` directory to verify your plugin works correctly:
-
-```python
-# tests/test_my_plugin.py
-import unittest
-from unittest.mock import patch, Mock
-from monitorpy.core import run_check, CheckResult
-from monitorpy.plugins.my_plugin import MyCustomPlugin
-
-class TestMyCustomPlugin(unittest.TestCase):
-    def setUp(self):
-        """Set up test fixtures."""
-        self.base_config = {
-            "required_param1": "value1",
-            "required_param2": "value2"
-        }
-    
-    def test_get_required_config(self):
-        """Test that the plugin correctly reports required parameters."""
-        required = MyCustomPlugin.get_required_config()
-        self.assertIsInstance(required, list)
-        self.assertIn("required_param1", required)
-        self.assertIn("required_param2", required)
-    
-    def test_validate_config_valid(self):
-        """Test validation with valid configuration."""
-        plugin = MyCustomPlugin(self.base_config)
-        self.assertTrue(plugin.validate_config())
-    
-    def test_validate_config_missing_required(self):
-        """Test validation with missing required parameters."""
-        plugin = MyCustomPlugin({"required_param1": "value1"})
-        self.assertFalse(plugin.validate_config())
-    
-    # Add more tests for your plugin's specific functionality
-    # ...
-
-if __name__ == '__main__':
-    unittest.main()
-```
-
-### Mocking External Dependencies
-
-When your plugin interacts with external systems (APIs, databases, network services), you should mock these dependencies in your tests:
-
-```python
-@patch('requests.get')
-def test_api_check_success(self, mock_get):
-    """Test successful API check."""
-    # Configure mock
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {"status": "ok", "data": [1, 2, 3]}
-    mock_get.return_value = mock_response
-    
-    # Run check
-    result = run_check("my_custom_plugin", self.base_config)
-    
-    # Verify result
-    self.assertEqual(result.status, CheckResult.STATUS_SUCCESS)
-    self.assertIn("successful", result.message)
-```
-
-### Test Coverage
-
-Your tests should cover:
-
-1. Configuration validation (required and optional parameters)
-2. Success scenarios
-3. Error conditions and error handling
-4. Edge cases specific to your plugin's functionality
-
-### Examples
-
-For examples of effective plugin tests, see the existing test files:
-
-- [Website Plugin Tests](testing/website_plugin_tests.md)
-- [SSL Certificate Plugin Tests](testing/ssl_plugin_tests.md)
-- [Mail Server Plugin Tests](testing/mail_plugin_tests.md)
-
-These provide patterns you can follow when writing tests for your own plugins.
-
-For more information about the testing approach, see the [Testing Documentation](testing/index.md).
+1. Look at the example plugins in the `monitorpy/monitorpy/plugins` directory
+2. Check out the `sample_template.py` file for a comprehensive example
+3. See the plugin tests in the `tests` directory for testing approaches

@@ -12,9 +12,10 @@ MonitorPy is a flexible and extensible monitoring system designed to check websi
 - **SSL Certificate Monitoring**: Verify certificate validity and expiration dates
 - **Mail Server Monitoring**: Test SMTP, IMAP, and POP3 functionality and authentication
 - **DNS Monitoring**: Validate DNS records, check propagation, and verify DNSSEC
-- **Plugin Architecture**: Easily extend with custom monitoring plugins
+- **Enhanced Plugin Framework**: Easily create custom monitoring plugins with helper methods
 - **Comprehensive CLI**: Command-line interface for all monitoring functions
 - **Detailed Reporting**: Get in-depth information about monitoring results
+- **Plugin Template System**: Start new plugins quickly with pre-implemented functionality
 
 ## Installation
 
@@ -78,6 +79,7 @@ For more detailed documentation, see the [docs](docs/) directory:
 
 ### Development
 - [Writing Plugins](docs/writing_plugins.md)
+- [Sample Plugin](docs/plugins/sample/index.md)
 - [Testing](docs/testing/index.md)
 
 ## Monitoring Capabilities
