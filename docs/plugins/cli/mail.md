@@ -25,7 +25,7 @@ Where `HOSTNAME` is the mail server hostname or domain you want to check.
 | `--from FROM_EMAIL` | From email address (for test email) | None |
 | `--to TO_EMAIL` | To email address (for test email) | None |
 | `--basic-check` | Perform basic connectivity check without authentication | False |
-| `--resolve-mx` | Resolve MX records for domain and check the highest priority server | False |
+| `--no-resolve-mx` | Disable MX record resolution for domain (enabled by default) | False |
 | `-v, --verbose` | Show detailed output | False |
 | `--json` | Output results as JSON | False |
 
@@ -39,12 +39,12 @@ Check if an SMTP server is accessible:
 monitorpy mail mail.example.com --protocol smtp
 ```
 
-### Check with MX Record Resolution
+### Disable MX Record Resolution
 
-When you know the domain but not the mail server hostname:
+MX record resolution is enabled by default. To disable it:
 
 ```bash
-monitorpy mail example.com --protocol smtp --resolve-mx
+monitorpy mail example.com --protocol smtp --no-resolve-mx
 ```
 
 ### SMTP with Authentication

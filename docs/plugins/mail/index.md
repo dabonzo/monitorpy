@@ -22,8 +22,11 @@ The mail server monitoring plugin provides capabilities for checking mail server
 # Basic SMTP server check
 monitorpy mail example.com --protocol smtp --basic-check
 
-# Check with MX record resolution
-monitorpy mail example.com --protocol smtp --basic-check --resolve-mx
+# Basic check with domain (MX resolution happens automatically)
+monitorpy mail example.com --protocol smtp --basic-check
+
+# Disable automatic MX record resolution
+monitorpy mail example.com --protocol smtp --basic-check --no-resolve-mx
 
 # Check SMTP with authentication
 monitorpy mail mail.example.com --protocol smtp --username user@example.com --password yourpassword

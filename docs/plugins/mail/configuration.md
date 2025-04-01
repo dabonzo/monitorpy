@@ -26,7 +26,7 @@ This document describes the configuration options for the mail server monitoring
 | `to_email` | string | None | To email address (for test email) |
 | `subject` | string | None | Email subject (for test email) |
 | `message` | string | None | Email message body (for test email) |
-| `resolve_mx` | boolean | False | Resolve MX records for domain and check the highest priority server |
+| `resolve_mx` | boolean | True | Resolve MX records for domain and check the highest priority server |
 
 ## Protocol Specifics
 

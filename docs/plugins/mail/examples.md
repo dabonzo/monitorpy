@@ -24,19 +24,19 @@ result = run_check("mail_server", config)
 print(f"Status: {result.status}, Message: {result.message}")
 ```
 
-### Check with MX Record Resolution
+### Disable MX Record Resolution
 
-When you know the domain but not the mail server hostname:
+MX record resolution is enabled by default. To disable it:
 
 ```bash
-monitorpy mail example.com --protocol smtp --resolve-mx
+monitorpy mail example.com --protocol smtp --no-resolve-mx
 ```
 
 ```python
 config = {
     "hostname": "example.com",
     "protocol": "smtp",
-    "resolve_mx": True
+    "resolve_mx": False  # Disable the default behavior
 }
 
 result = run_check("mail_server", config)
