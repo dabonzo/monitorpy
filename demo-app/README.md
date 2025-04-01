@@ -17,7 +17,14 @@ This is a simple web application to demonstrate the MonitorPy API functionality.
 
 ### Running the Demo
 
-1. Start both the MonitorPy API and the demo app:
+1. Install the required dependencies:
+
+   ```bash
+   # Install Flask and other required packages
+   ./setup.sh
+   ```
+
+2. Start both the MonitorPy API and the demo app:
 
    ```bash
    # Start with default ports

@@ -20,6 +20,12 @@ done
 # Create data directory if it doesn't exist
 mkdir -p data
 
+# Check if required packages are installed
+if ! python -c "import flask" &>/dev/null; then
+    echo "Flask is not installed. Please run ./setup.sh first."
+    exit 1
+fi
+
 # Start the MonitorPy API in the background
 echo "Starting MonitorPy API on port $MONITORPY_API_PORT..."
 cd $(dirname $0)/..
