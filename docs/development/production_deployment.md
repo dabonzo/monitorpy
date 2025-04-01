@@ -32,7 +32,7 @@ pip install gunicorn psycopg2-binary flask flask-sqlalchemy flask-migrate flask-
 Create a WSGI file for running the application with Gunicorn:
 
 ```bash
-nano /opt/monitorpy/monitorpy/monitorpy/api/wsgi.py
+nano /opt/monitorpy/monitorpy/api/wsgi.py
 ```
 
 Add the following content:
@@ -76,7 +76,7 @@ Environment="FLASK_ENV=production"
 Environment="SECRET_KEY=your_secure_secret_key"
 Environment="JWT_SECRET_KEY=your_secure_jwt_key"
 Environment="AUTH_REQUIRED=true"
-ExecStart=/usr/local/bin/gunicorn monitorpy.monitorpy.api.wsgi:app -w 4 -b 0.0.0.0:5000
+ExecStart=/usr/local/bin/gunicorn monitorpy.api.wsgi:app -w 4 -b 0.0.0.0:5000
 Restart=always
 RestartSec=10
 

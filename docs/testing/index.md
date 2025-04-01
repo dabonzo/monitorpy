@@ -56,7 +56,7 @@ For more detailed information about specific test suites:
 
 When creating a new monitoring plugin, you should also create corresponding tests. Follow these guidelines:
 
-1. Create a new test file in the `monitorpy/tests/` directory
+1. Create a new test file in the `tests/` directory
 2. Test configuration validation
 3. Test success and error scenarios
 4. Mock external dependencies

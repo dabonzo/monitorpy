@@ -160,6 +160,6 @@ Don't forget to document your plugin by adding information to the appropriate do
 
 For more detailed examples and guidance:
 
-1. Look at the example plugins in the `monitorpy/monitorpy/plugins` directory
+1. Look at the example plugins in the `monitorpy/plugins` directory
 2. Check out the `sample_template.py` file for a comprehensive example
 3. See the plugin tests in the `tests` directory for testing approaches
