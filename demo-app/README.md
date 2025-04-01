@@ -47,6 +47,8 @@ This demo app provides a simple interface for:
 - **Result Viewing**: See recent check results in a table
 - **Real-time Testing**: Run checks on demand and see the results immediately
 
+> **Note:** For demonstration purposes, this app uses a simplified mock API that simulates the full MonitorPy API functionality. The mock API provides the same endpoints but uses in-memory storage instead of a database.
+
 ## Implementation Details
 
 The demo app is a simple client-side JavaScript application that communicates with the MonitorPy API. It includes:
