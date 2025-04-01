@@ -1,4 +1,15 @@
-version: '3.8'
+# Database Configuration Guide:
+# 
+# This docker-compose file supports three database options:
+# 1. SQLite (default): No additional configuration needed
+# 2. PostgreSQL: Uncomment the PostgreSQL DATABASE_URL in the api environment
+# 3. MySQL: Uncomment the MySQL service, MySQL DATABASE_URL, mysql_data volume, 
+#    and add mysql to the depends_on list in the api service
+#
+# To switch databases:
+# - For PostgreSQL: Uncomment the PostgreSQL DATABASE_URL (already set up by default)
+# - For MySQL: Uncomment the mysql service, mysql_data volume, mysql dependency,
+#   and MySQL DATABASE_URL in the api service environment 
 
 services:
   api:
@@ -9,7 +20,12 @@ services:
       - "5000:5000"
     environment:
       - FLASK_ENV=development
+      # Default: SQLite database
       - DATABASE_URL=sqlite:////data/monitorpy.db
+      # PostgreSQL (uncomment to use):
+      # - DATABASE_URL=postgresql://monitorpy:monitorpy@db:5432/monitorpy
+      # MySQL (uncomment to use):
+      # - DATABASE_URL=mysql+pymysql://monitorpy:monitorpy@mysql:3306/monitorpy
       - SECRET_KEY=dev_secret_key_change_me_in_production
       - JWT_SECRET_KEY=dev_jwt_key_change_me_in_production
       - AUTH_REQUIRED=false
@@ -18,9 +34,12 @@ services:
       - monitorpy_data:/data
     depends_on:
       - db
+      # - mysql  # Uncomment when using MySQL
     networks:
       - monitorpy_network
 
+  # PostgreSQL service (enabled by default)
+  # To use PostgreSQL, uncomment the PostgreSQL DATABASE_URL in the api service environment
   db:
     image: postgres:14
     environment:
@@ -34,6 +53,23 @@ services:
     networks:
       - monitorpy_network
 
+  # MySQL service (disabled by default)
+  # To use MySQL, uncomment this service and the MySQL DATABASE_URL in the api service environment
+  # mysql:
+  #   image: mysql:8
+  #   command: --default-authentication-plugin=mysql_native_password
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD=rootpassword
+  #     - MYSQL_DATABASE=monitorpy
+  #     - MYSQL_USER=monitorpy
+  #     - MYSQL_PASSWORD=monitorpy
+  #   ports:
+  #     - "3306:3306"
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #   networks:
+  #     - monitorpy_network
+
   adminer:
     image: adminer
     ports:
@@ -42,6 +78,7 @@ services:
       - monitorpy_network
     depends_on:
       - db
+      # - mysql  # Uncomment when using MySQL
 
 networks:
   monitorpy_network:
@@ -49,4 +86,5 @@ networks:
 
 volumes:
   postgres_data:
+  # mysql_data:  # Uncomment when using MySQL
   monitorpy_data:
