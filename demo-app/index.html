@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonitorPy Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MonitorPy Dashboard</h1>
+            <div class="api-status">API Status: <span id="api-status">Checking...</span></div>
+        </header>
+
+        <div class="dashboard">
+            <div class="sidebar">
+                <h2>Actions</h2>
+                <button id="btn-refresh" class="btn">Refresh Data</button>
+                <button id="btn-add-check" class="btn">Add New Check</button>
+                
+                <div class="plugin-list">
+                    <h3>Available Plugins</h3>
+                    <ul id="plugin-list">
+                        <li>Loading plugins...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div class="card">
+                    <h2>Monitoring Checks</h2>
+                    <div class="table-container">
+                        <table id="checks-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Last Run</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="checks-body">
+                                <tr>
+                                    <td colspan="5" class="center">Loading checks...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Recent Results</h2>
+                    <div class="table-container">
+                        <table id="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Check Name</th>
+                                    <th>Status</th>
+                                    <th>Response Time</th>
+                                    <th>Message</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-body">
+                                <tr>
+                                    <td colspan="5" class="center">Loading results...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Check Modal -->
+    <div id="add-check-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add New Check</h2>
+            <form id="add-check-form">
+                <div class="form-group">
+                    <label for="check-name">Name:</label>
+                    <input type="text" id="check-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="check-type">Type:</label>
+                    <select id="check-type" required>
+                        <option value="">Select plugin type...</option>
+                    </select>
+                </div>
+                <div id="dynamic-config">
+                    <!-- Dynamic form fields will be added here based on plugin type -->
+                </div>
+                <button type="submit" class="btn">Save Check</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Run Check Modal -->
+    <div id="run-check-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Check Result</h2>
+            <div id="run-result" class="result-display">
+                <div class="result-status">Status: <span id="result-status-value">-</span></div>
+                <div class="result-message">Message: <span id="result-message-value">-</span></div>
+                <div class="result-time">Response Time: <span id="result-time-value">-</span> seconds</div>
+                <div class="result-raw">
+                    <h3>Raw Data:</h3>
+                    <pre id="result-raw-value">-</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
