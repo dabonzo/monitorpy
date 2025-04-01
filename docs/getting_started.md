@@ -54,12 +54,13 @@ The MonitorPy project follows this directory structure:
 ```
 monitorpy_v2/                # Project root
 ├── monitorpy/               # Package directory
-│   ├── __init__.py
-│   ├── cli.py
-│   ├── core/                # Core components
-│   ├── plugins/             # Plugin implementations
-│   └── utils/               # Utility functions
-├── tests/                   # Test suite
+│   ├── monitorpy/           # Main package source
+│   │   ├── __init__.py
+│   │   ├── cli.py
+│   │   ├── core/            # Core components
+│   │   ├── plugins/         # Plugin implementations
+│   │   └── utils/           # Utility functions
+│   └── tests/               # Test suite
 └── docs/                    # Documentation
 ```
 
@@ -114,30 +115,30 @@ pip install pytest pytest-cov
 
 ```bash
 # From the project root
-pytest monitorpy/tests/
+pytest tests/
 ```
 
 ### Running Specific Tests
 
 ```bash
 # Run tests for a specific component
-pytest monitorpy/tests/test_website.py
+pytest tests/test_website.py
 
 # Run a specific test class
-pytest monitorpy/tests/test_core.py::TestCheckResult
+pytest tests/test_core.py::TestCheckResult
 
 # Run a specific test method
-pytest monitorpy/tests/test_core.py::TestCheckResult::test_status_check_methods
+pytest tests/test_core.py::TestCheckResult::test_status_check_methods
 ```
 
 ### Generating Coverage Reports
 
 ```bash
 # Generate a coverage report
-pytest --cov=monitorpy monitorpy/tests/
+pytest --cov=monitorpy tests/
 
 # Generate an HTML coverage report
-pytest --cov=monitorpy --cov-report=html monitorpy/tests/
+pytest --cov=monitorpy --cov-report=html tests/
 ```
 
 For more information about the testing approach and test suite organization, see the [Testing Documentation](testing/index.md).

@@ -16,12 +16,13 @@ MonitorPy follows these testing principles:
 
 ## Test Organization
 
-Tests are organized in the `tests/` directory, with separate files for each major component:
+Tests are organized in the `tests/` directory at the project root, with separate files for each major component:
 
-- `test_core.py`: Tests for the core components (CheckResult, MonitorPlugin, registry)
-- `test_website.py`: Tests for the website status monitoring plugin
-- `test_ssl_cert_check.py`: Tests for the SSL certificate monitoring plugin
-- `test_mail_server.py`: Tests for the mail server monitoring plugin
+- `tests/test_core.py`: Tests for the core components (CheckResult, MonitorPlugin, registry)
+- `tests/test_website.py`: Tests for the website status monitoring plugin
+- `tests/test_ssl_cert_check.py`: Tests for the SSL certificate monitoring plugin
+- `tests/test_mail_server.py`: Tests for the mail server monitoring plugin
+- `tests/test_batch_runner.py`: Tests for the parallel execution functionality
 
 As new plugins are added, corresponding test files should be created following the same patterns.
 
@@ -41,6 +42,12 @@ pytest -v tests/
 
 # Run tests and generate coverage report
 pytest --cov=monitorpy tests/
+
+# Run tests for parallel execution
+pytest tests/test_batch_runner.py
+
+# Run with specific markers
+pytest tests/ -m "not slow"
 ```
 
 ## Detailed Test Documentation

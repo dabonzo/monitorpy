@@ -111,7 +111,7 @@ else:
     print("Website is down!")
 ```
 
-### Checking Multiple Websites
+### Checking Multiple Websites in Series
 
 ```python
 from monitorpy import run_check
@@ -131,6 +131,49 @@ for website in websites:
 for website, result in results.items():
     status = "✅" if result.is_success() else "❌"
     print(f"{status} {website}: {result.message}")
+```
+
+### Checking Multiple Websites in Parallel
+
+```python
+from monitorpy.core import run_checks_in_parallel
+
+websites = [
+    "https://www.example.com",
+    "https://api.example.com",
+    "https://blog.example.com",
+    "https://github.com",
+    "https://gitlab.com",
+    "https://bitbucket.org"
+]
+
+# Create check configurations
+check_configs = [
+    {
+        "id": f"site{i+1}",
+        "plugin_type": "website_status",
+        "config": {
+            "url": url,
+            "timeout": 30,
+            "expected_status": 200
+        }
+    }
+    for i, url in enumerate(websites)
+]
+
+# Run checks in parallel with up to 10 worker threads
+results = run_checks_in_parallel(check_configs, max_workers=10)
+
+# Process results
+for check_config, result in results:
+    url = check_config["config"]["url"]
+    status = "✅" if result.is_success() else "❌"
+    print(f"{status} {url}: {result.message} ({result.response_time:.2f}s)")
+
+# Calculate statistics
+total = len(results)
+success = sum(1 for _, result in results if result.status == "success")
+print(f"Summary: {success}/{total} successful")
 ```
 
 ### Scheduled Monitoring
@@ -292,6 +335,61 @@ monitor:
     - monitorpy ssl www.example.com
   after_script:
     - echo "Monitoring completed"
+```
+
+### Batch Processing for Large Numbers of Checks
+
+When you need to monitor hundreds or thousands of endpoints, it's better to use the batch processing functionality:
+
+```python
+from monitorpy.core import run_check_batch
+import csv
+import time
+
+# Load URLs from a CSV file
+def load_urls_from_csv(file_path):
+    urls = []
+    with open(file_path, 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if row and row[0].startswith('http'):
+                urls.append(row[0])
+    return urls
+
+# Load a large number of URLs
+urls = load_urls_from_csv('large_website_list.csv')
+print(f"Loaded {len(urls)} URLs to check")
+
+# Create check configurations
+check_configs = [
+    {
+        "id": f"site{i+1}",
+        "plugin_type": "website_status",
+        "config": {
+            "url": url,
+            "timeout": 10,
+            "expected_status": 200
+        }
+    }
+    for i, url in enumerate(urls)
+]
+
+# Start timing
+start_time = time.time()
+
+# Process in batches of 50 with 20 workers each
+results = run_check_batch(check_configs, batch_size=50, max_workers=20)
+
+# Print stats
+duration = time.time() - start_time
+total_count = len(results)
+success_count = sum(1 for _, result in results if result.status == "success")
+error_count = sum(1 for _, result in results if result.status == "error")
+warning_count = sum(1 for _, result in results if result.status == "warning")
+
+print(f"Completed {total_count} checks in {duration:.2f} seconds")
+print(f"Results: {success_count} successful, {warning_count} warnings, {error_count} errors")
+print(f"Average time per check: {duration/total_count:.4f} seconds")
 ```
 
 ### Creating a System Service for Continuous Monitoring

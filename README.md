@@ -12,6 +12,8 @@ MonitorPy is a flexible and extensible monitoring system designed to check websi
 - SSL certificate validity and expiration checks
 - Mail server connectivity and authentication testing
 - DNS record checking and propagation monitoring
+- Parallel execution for monitoring multiple endpoints simultaneously
+- Batch processing for handling large numbers of checks
 - Plugin-based architecture for extensibility
 - Command-line interface for easy use
 - Detailed logging and reporting
@@ -23,12 +25,17 @@ The project follows this directory structure:
 ```
 monitorpy_v2/                # Project root
 ├── monitorpy/               # Package directory
-│   ├── __init__.py
-│   ├── cli.py
-│   ├── core/                # Core components
-│   ├── plugins/             # Plugin implementations
-│   └── utils/               # Utility functions
-├── tests/                   # Test suite
+│   ├── monitorpy/           # Main package source
+│   │   ├── __init__.py
+│   │   ├── cli.py
+│   │   ├── core/            # Core components
+│   │   │   ├── batch_runner.py  # Parallel execution system
+│   │   │   ├── plugin_base.py   # Plugin base classes
+│   │   │   ├── registry.py      # Plugin registry
+│   │   │   └── result.py        # Check result classes
+│   │   ├── plugins/         # Plugin implementations
+│   │   └── utils/           # Utility functions
+│   └── tests/               # Test suite
 └── docs/                    # Documentation
 ```
 
@@ -70,6 +77,12 @@ monitorpy mail example.com --protocol smtp --basic-check --resolve-mx
 
 # Check a DNS record
 monitorpy dns example.com --type A --check-propagation
+
+# Check multiple websites in parallel
+monitorpy website --sites websites.txt --parallel --max-workers 10
+
+# Run a batch of different checks
+monitorpy batch checks.json --max-workers 20 --batch-size 10
 ```
 
 
@@ -82,6 +95,8 @@ For detailed documentation, see the [docs](docs/) directory:
 - [Configuration](docs/configuration.md) - Basic configuration options
 - [Advanced Configuration](docs/reference/advanced_configuration.md) - Comprehensive configuration guide
 - [Examples](docs/examples.md) - Common usage patterns
+- [Parallel Execution](docs/parallel/overview.md) - Running checks in parallel
+- [Parallel Examples](docs/parallel/examples.md) - Examples of parallel execution usage
 - [Writing Plugins](docs/writing_plugins.md) - Extending MonitorPy with custom plugins
 
 ## Testing

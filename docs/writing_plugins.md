@@ -143,6 +143,8 @@ When developing plugins, follow these best practices:
 5. **Thorough Validation**: Validate the configuration thoroughly to prevent runtime errors
 6. **Comprehensive Documentation**: Document the plugin's purpose, requirements, and behavior
 7. **Stateless Design**: Plugins should be stateless and not rely on external state between runs
+8. **Thread Safety**: Ensure your plugin is thread-safe for parallel execution
+9. **Resource Management**: Properly manage resources (like connections) to avoid leaks in parallel contexts
 
 ## Adding CLI Support
 
@@ -156,6 +158,64 @@ Don't forget to document your plugin by adding information to the appropriate do
 - Add examples in `docs/plugins/your_plugin/examples.md`
 - Document CLI usage in `docs/plugins/cli/your_plugin.md`
 
+## Supporting Parallel Execution
+
+MonitorPy provides a parallel execution system that allows running multiple checks concurrently. To ensure your plugin works well with this system:
+
+1. **Thread Safety**: Make sure your plugin is thread-safe. Avoid using global or class variables that could be modified by multiple threads.
+
+2. **Resource Management**: Properly close any opened resources (files, network connections, etc.) even if an exception occurs.
+
+3. **Timeout Support**: Implement proper timeout handling in your plugin to prevent hanging in parallel contexts.
+
+4. **Testing**: Test your plugin with the parallel execution framework to ensure it works correctly under concurrent load.
+
+Example of implementing a thread-safe connection pool:
+
+```python
+import queue
+from contextlib import contextmanager
+
+class MyPlugin(PluginTemplate):
+    """Plugin with connection pooling for parallel execution."""
+    
+    # Class-level connection pool
+    _connection_pool = queue.Queue(maxsize=10)
+    
+    @classmethod
+    @contextmanager
+    def _get_connection(cls, config):
+        """Get a connection from the pool or create a new one."""
+        try:
+            # Try to get a connection from the pool
+            connection = cls._connection_pool.get(block=False)
+            created = False
+        except queue.Empty:
+            # Create a new connection if the pool is empty
+            connection = create_new_connection(config)
+            created = True
+            
+        try:
+            # Yield the connection for use
+            yield connection
+        finally:
+            # Return to pool or close based on creation status
+            if not created and cls._connection_pool.qsize() < 10:
+                # Return borrowed connection to the pool
+                cls._connection_pool.put(connection)
+            else:
+                # Close newly created connection
+                connection.close()
+    
+    def _execute_check(self):
+        with self._get_connection(self.config) as conn:
+            # Use the connection to perform the check
+            # ...
+            return self.success_result("Check completed successfully", response_time)
+```
+
+For more information on parallel execution, see the [Parallel Execution](parallel/overview.md) documentation.
+
 ## Need Help?
 
 For more detailed examples and guidance:
@@ -163,3 +223,4 @@ For more detailed examples and guidance:
 1. Look at the example plugins in the `monitorpy/plugins` directory
 2. Check out the `sample_template.py` file for a comprehensive example
 3. See the plugin tests in the `tests` directory for testing approaches
+4. Review the `batch_runner.py` file to understand parallel execution

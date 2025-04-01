@@ -10,6 +10,10 @@ These options can be used with any MonitorPy command:
 --log-level {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                       Set logging level (default: INFO)
 --log-file LOG_FILE  Log file path (if not specified, logs to stdout only)
+--parallel           Run multiple checks in parallel (when applicable)
+--max-workers MAX    Maximum number of worker threads for parallel execution
+--batch-size SIZE    Number of checks to process in each batch
+--timeout TIMEOUT    Timeout for batch operations in seconds
 ```
 
 ## Commands
@@ -34,6 +38,7 @@ Checks if a website is accessible and optionally verifies its content.
 
 ```
 URL                   URL to check
+--sites SITES_FILE    File containing URLs to check (one per line)
 --timeout TIMEOUT     Request timeout in seconds (default: 30)
 --status STATUS       Expected HTTP status code (default: 200)
 --method METHOD       HTTP method (GET, POST, etc.) (default: GET)
@@ -47,6 +52,8 @@ URL                   URL to check
                       Password for basic authentication
 --no-verify           Disable SSL certificate verification
 --no-redirect         Disable following redirects
+--parallel            Run checks in parallel (when using --sites)
+--max-workers MAX     Maximum number of worker threads (default: auto)
 -v, --verbose         Show detailed output
 --json                Output results as JSON
 ```
@@ -90,12 +97,15 @@ Checks the validity and expiration of an SSL certificate.
 
 ```
 HOSTNAME              Hostname or URL to check
+--hosts HOSTS_FILE    File containing hostnames to check (one per line)
 --port PORT           Port number (default: 443)
 --timeout TIMEOUT     Connection timeout in seconds (default: 30)
 --warning WARNING     Warning threshold in days (default: 30)
 --critical CRITICAL   Critical threshold in days (default: 14)
 --check-chain         Check certificate chain
 --no-verify-hostname  Disable hostname verification
+--parallel            Run checks in parallel (when using --hosts)
+--max-workers MAX     Maximum number of worker threads (default: auto)
 -v, --verbose         Show detailed output
 --json                Output results as JSON
 ```
@@ -120,6 +130,15 @@ monitorpy ssl www.example.com --port 8443
 Check with certificate chain details:
 ```bash
 monitorpy ssl www.example.com --check-chain --verbose
+```
+
+Check multiple SSL certificates in parallel:
+```bash
+# Create a file with hostnames, one per line
+echo -e "example.com\ngithub.com\ngoogle.com" > hostnames.txt
+
+# Check all certificates in parallel
+monitorpy ssl --hosts hostnames.txt --parallel --max-workers 10 --verbose
 ```
 
 ## Exit Codes
