@@ -74,3 +74,12 @@ test_import.py
 /laravel/Homestead.yaml
 /laravel/npm-debug.log
 /laravel/yarn-error.log
+/sites.txt
+/ssl-hosts.txt
+/test-domains.txt
+/test-hosts.txt
+/test-mail.txt
+/websites.txt
+/batch-checks.json
+/dns-domains.txt
+/mail-servers.txt
