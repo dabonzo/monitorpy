@@ -22,13 +22,13 @@ The project follows this directory structure:
 
 ```
 monitorpy_v2/                # Project root
-├── monitorpy/               # Package root (contains setup.py)
-│   └── monitorpy/           # Actual package directory
-│       ├── __init__.py
-│       ├── cli.py
-│       ├── core/            # Core components
-│       ├── plugins/         # Plugin implementations
-│       └── utils/           # Utility functions
+├── monitorpy/               # Package directory
+│   ├── __init__.py
+│   ├── cli.py
+│   ├── core/                # Core components
+│   ├── plugins/             # Plugin implementations
+│   └── utils/               # Utility functions
+├── tests/                   # Test suite
 └── docs/                    # Documentation
 ```
 
@@ -39,7 +39,7 @@ monitorpy_v2/                # Project root
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/monitorpy_v2.git
-cd monitorpy_v2/monitorpy
+cd monitorpy_v2
 
 # Install in development mode
 pip install -e .
@@ -95,10 +95,10 @@ MonitorPy includes a comprehensive test suite to ensure reliable operation acros
 pip install pytest pytest-cov
 
 # Run all tests
-pytest monitorpy/tests/
+pytest tests/
 
 # Generate coverage report
-pytest --cov=monitorpy monitorpy/tests/
+pytest --cov=monitorpy tests/
 ```
 
 ### Test Documentation

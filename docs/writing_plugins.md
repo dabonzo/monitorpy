@@ -93,7 +93,7 @@ result, duration = self.timed_execution(my_function, arg1, arg2, kwarg1=value)
 ## Complete Plugin Example
 
 A complete example plugin is available at:
-`monitorpy/monitorpy/plugins/sample_template.py`
+`monitorpy/plugins/sample_template.py`
 
 This example demonstrates proper configuration validation, error handling, result creation, and other best practices.
 
@@ -109,7 +109,7 @@ class MyPlugin(MonitorPlugin):
     # ...
 ```
 
-Then import your plugin in the `monitorpy/monitorpy/plugins/__init__.py` file:
+Then import your plugin in the `monitorpy/plugins/__init__.py` file:
 
 ```python
 from monitorpy.plugins.my_plugin import MyPlugin

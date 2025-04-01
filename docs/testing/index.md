@@ -16,7 +16,7 @@ MonitorPy follows these testing principles:
 
 ## Test Organization
 
-Tests are organized in the `monitorpy/tests/` directory, with separate files for each major component:
+Tests are organized in the `tests/` directory, with separate files for each major component:
 
 - `test_core.py`: Tests for the core components (CheckResult, MonitorPlugin, registry)
 - `test_website.py`: Tests for the website status monitoring plugin
@@ -31,16 +31,16 @@ You can run the MonitorPy tests using pytest:
 
 ```bash
 # Run all tests
-pytest monitorpy/tests/
+pytest tests/
 
 # Run tests for a specific component
-pytest monitorpy/tests/test_website.py
+pytest tests/test_website.py
 
 # Run tests with verbose output
-pytest -v monitorpy/tests/
+pytest -v tests/
 
 # Run tests and generate coverage report
-pytest --cov=monitorpy monitorpy/tests/
+pytest --cov=monitorpy tests/
 ```
 
 ## Detailed Test Documentation
