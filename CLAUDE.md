@@ -5,7 +5,7 @@
 - Run all tests: `pytest monitorpy/tests/`
 - Run specific test: `pytest monitorpy/tests/test_file.py::TestClass::test_method`
 - Test with coverage: `pytest --cov=monitorpy monitorpy/tests/`
-- Format code: `black monitorpy/`
+- Format code: `black monitorpy/` (always run this before committing)
 - Lint: `flake8 monitorpy/`
 - Sort imports: `isort monitorpy/`
 - Type check: `mypy monitorpy/`
