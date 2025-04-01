@@ -6,9 +6,9 @@ proper testing patterns for MonitorPy plugins.
 """
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
-from monitorpy.core.registry import run_check
+from monitorpy.core.registry import run_check, registry
 from monitorpy.core.result import CheckResult
 from monitorpy.plugins.sample_template import (
     SampleMonitorPlugin,
@@ -27,6 +27,12 @@ class TestSampleMonitorPlugin(unittest.TestCase):
             "timeout": 30,
             "warning_threshold": 5.0,
         }
+        
+        # Ensure plugins are registered
+        if "sample_monitor" not in registry.plugins:
+            registry.register("sample_monitor", SampleMonitorPlugin)
+        if "custom_api_monitor" not in registry.plugins:
+            registry.register("custom_api_monitor", CustomAPIMonitorPlugin)
 
         self.invalid_config = {
             "target": "example.com",
