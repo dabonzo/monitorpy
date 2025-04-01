@@ -57,14 +57,11 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         help="Set logging level",
     )
     parser.add_argument(
-        "--log-file", 
+        "--log-file",
         default=get_config("general", "log_file"),
-        help="Log file path (if not specified, logs to stdout only)"
+        help="Log file path (if not specified, logs to stdout only)",
     )
-    parser.add_argument(
-        "--config",
-        help="Path to configuration file"
-    )
+    parser.add_argument("--config", help="Path to configuration file")
 
     # Create subparsers for different commands
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
@@ -75,30 +72,23 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         help="List available plugins",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    
+
     # Config command
     config_parser = subparsers.add_parser(
         "config",
         help="Configuration management",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    config_parser.add_argument(
-        "action",
-        choices=["generate"],
-        help="Action to perform"
-    )
+    config_parser.add_argument("action", choices=["generate"], help="Action to perform")
     config_parser.add_argument(
         "--output",
         default="./monitorpy.yml",
-        help="Output file path for generated config"
+        help="Output file path for generated config",
     )
     config_parser.add_argument(
-        "--format",
-        choices=["yaml", "json"],
-        default="yaml",
-        help="Output format"
+        "--format", choices=["yaml", "json"], default="yaml", help="Output format"
     )
-    
+
     # API server command
     api_parser = subparsers.add_parser(
         "api",
@@ -108,12 +98,8 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     api_parser.add_argument(
         "--host", type=str, default="0.0.0.0", help="Host to bind to"
     )
-    api_parser.add_argument(
-        "--port", type=int, default=5000, help="Port to bind to"
-    )
-    api_parser.add_argument(
-        "--debug", action="store_true", help="Run in debug mode"
-    )
+    api_parser.add_argument("--port", type=int, default=5000, help="Port to bind to")
+    api_parser.add_argument("--debug", action="store_true", help="Run in debug mode")
     api_parser.add_argument(
         "--database", type=str, help="Database URL (defaults to SQLite)"
     )
@@ -241,9 +227,11 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         help="Perform basic connectivity check without authentication",
     )
     mail_parser.add_argument(
-        "--resolve-mx",
-        action="store_true",
-        help="Resolve MX records for domain and check the highest priority server",
+        "--no-resolve-mx",
+        action="store_false",
+        dest="resolve_mx",
+        default=True,  # Make this the default behavior
+        help="Don't resolve MX records for domain (resolve_mx is enabled by default)",
     )
 
     dns_parser = subparsers.add_parser(
@@ -524,38 +512,40 @@ def handle_api_command(args) -> int:
     try:
         # Set environment variables from command-line arguments
         if args.database:
-            os.environ['DATABASE_URL'] = args.database
-        
+            os.environ["DATABASE_URL"] = args.database
+
         # Set development mode
-        os.environ['FLASK_ENV'] = 'development' if args.debug else 'production'
-        
+        os.environ["FLASK_ENV"] = "development" if args.debug else "production"
+
         # Get host and port from config if not specified in args
-        host = args.host or get_config('api', 'host', '0.0.0.0')
-        port = args.port or get_config('api', 'port', 5000)
-        debug = args.debug or get_config('api', 'debug', False)
-        
+        host = args.host or get_config("api", "host", "0.0.0.0")
+        port = args.port or get_config("api", "port", 5000)
+        debug = args.debug or get_config("api", "debug", False)
+
         print(f"Starting MonitorPy API server on {host}:{port}...")
         print("Press Ctrl+C to stop the server")
-        
+
         # Import API app
         from monitorpy.api import create_app
         from monitorpy.api.config import get_config as get_api_config
-        
+
         # Create the Flask app
         app = create_app(get_api_config())
-        
+
         # Run the Flask app
         app.run(host=host, port=port, debug=debug)
-        
+
         return 0
-    
+
     except ImportError:
         print("Error: API dependencies are not installed.")
         print("Please install the required packages:")
         print("  pip install flask flask-sqlalchemy flask-migrate flask-jwt-extended")
-        print("  pip install flask-marshmallow marshmallow-sqlalchemy flask-cors gunicorn")
+        print(
+            "  pip install flask-marshmallow marshmallow-sqlalchemy flask-cors gunicorn"
+        )
         return 1
-    
+
     except Exception as e:
         print(f"Error starting API server: {str(e)}")
         return 1
@@ -639,7 +629,7 @@ def handle_config_command(args) -> int:
         except Exception as e:
             print(f"Error generating sample configuration: {str(e)}")
             return 1
-    
+
     return 1
 
 
@@ -656,7 +646,7 @@ def main() -> int:
     # Load configuration file if specified
     if args.config:
         load_config(args.config)
-    
+
     # Set up logging
     log_level = getattr(logging, args.log_level)
     setup_logging(level=log_level, log_file=args.log_file)
