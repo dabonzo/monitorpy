@@ -1,6 +1,7 @@
 """
 Tests for the core components of MonitorPy.
 """
+
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -29,12 +30,7 @@ class TestCheckResult(unittest.TestCase):
     def test_to_dict(self):
         """Test conversion to dictionary."""
         raw_data = {"key": "value"}
-        result = CheckResult(
-            CheckResult.STATUS_SUCCESS,
-            "Test message",
-            1.23,
-            raw_data
-        )
+        result = CheckResult(CheckResult.STATUS_SUCCESS, "Test message", 1.23, raw_data)
         result_dict = result.to_dict()
 
         self.assertEqual(result_dict["status"], CheckResult.STATUS_SUCCESS)
@@ -78,19 +74,10 @@ class MockPlugin(MonitorPlugin):
 
     def run_check(self):
         if not self.validate_config():
-            return CheckResult(
-                CheckResult.STATUS_ERROR,
-                "Invalid configuration"
-            )
+            return CheckResult(CheckResult.STATUS_ERROR, "Invalid configuration")
         if self.config.get("should_fail", False):
-            return CheckResult(
-                CheckResult.STATUS_ERROR,
-                "Check failed"
-            )
-        return CheckResult(
-            CheckResult.STATUS_SUCCESS,
-            "Check succeeded"
-        )
+            return CheckResult(CheckResult.STATUS_ERROR, "Check failed")
+        return CheckResult(CheckResult.STATUS_SUCCESS, "Check succeeded")
 
 
 class TestPluginRegistry(unittest.TestCase):
@@ -141,6 +128,7 @@ class TestPluginRegistry(unittest.TestCase):
 
     def test_register_plugin_decorator(self):
         """Test the register_plugin decorator."""
+
         @register_plugin("decorated_mock")
         class DecoratedMockPlugin(MockPlugin):
             pass
@@ -188,7 +176,7 @@ class TestPluginRegistry(unittest.TestCase):
         mock_plugin.validate_config.return_value = True
         mock_plugin.run_check.side_effect = Exception("Test exception")
 
-        with patch.object(registry, 'get_plugin', return_value=mock_plugin):
+        with patch.object(registry, "get_plugin", return_value=mock_plugin):
             result = run_check("mock", {"required_param": "value"})
 
             self.assertEqual(result.status, CheckResult.STATUS_ERROR)
@@ -196,5 +184,5 @@ class TestPluginRegistry(unittest.TestCase):
             self.assertIn("Test exception", result.message)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

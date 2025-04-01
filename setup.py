@@ -1,6 +1,7 @@
 """
 Setup script for the MonitorPy package.
 """
+
 from setuptools import setup, find_packages
 
 # Read the long description from README.md

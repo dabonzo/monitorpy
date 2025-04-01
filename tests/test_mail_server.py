@@ -1,6 +1,7 @@
 """
 Tests for the mail server plugin.
 """
+
 import unittest
 from unittest.mock import patch, Mock, MagicMock
 import socket
@@ -54,31 +55,37 @@ class TestMailServerPlugin(unittest.TestCase):
 
     def test_validate_config_invalid_protocol(self):
         """Test validation with invalid protocol."""
-        plugin = MailServerPlugin({
-            "hostname": "mail.example.com",
-            "protocol": "invalid"  # Not a valid protocol
-        })
+        plugin = MailServerPlugin(
+            {
+                "hostname": "mail.example.com",
+                "protocol": "invalid",  # Not a valid protocol
+            }
+        )
         self.assertFalse(plugin.validate_config())
 
     def test_validate_config_test_send_missing_email(self):
         """Test validation when test_send is enabled but email addresses are missing."""
-        plugin = MailServerPlugin({
-            "hostname": "mail.example.com",
-            "protocol": "smtp",
-            "test_send": True  # Missing from_email and to_email
-        })
+        plugin = MailServerPlugin(
+            {
+                "hostname": "mail.example.com",
+                "protocol": "smtp",
+                "test_send": True,  # Missing from_email and to_email
+            }
+        )
         self.assertFalse(plugin.validate_config())
 
     def test_validate_config_username_without_password(self):
         """Test validation when username is provided but password is missing."""
-        plugin = MailServerPlugin({
-            "hostname": "mail.example.com",
-            "protocol": "smtp",
-            "username": "user"  # Missing password
-        })
+        plugin = MailServerPlugin(
+            {
+                "hostname": "mail.example.com",
+                "protocol": "smtp",
+                "username": "user",  # Missing password
+            }
+        )
         self.assertFalse(plugin.validate_config())
 
-    @patch('monitorpy.plugins.mail_server.MailServerPlugin._check_server_basic')
+    @patch("monitorpy.plugins.mail_server.MailServerPlugin._check_server_basic")
     def test_smtp_basic_check(self, mock_check_basic):
         """Test basic SMTP server check."""
         # Mock the _check_server_basic method to return a success result
@@ -90,8 +97,12 @@ class TestMailServerPlugin(unittest.TestCase):
                 "hostname": "mail.example.com",
                 "port": 25,
                 "protocol": "smtp",
-                "extensions": {"STARTTLS": "", "AUTH": "PLAIN LOGIN", "SIZE": "10240000"}
-            }
+                "extensions": {
+                    "STARTTLS": "",
+                    "AUTH": "PLAIN LOGIN",
+                    "SIZE": "10240000",
+                },
+            },
         )
 
         # Create plugin and run check
@@ -108,7 +119,7 @@ class TestMailServerPlugin(unittest.TestCase):
         # Verify the _check_server_basic method was called
         mock_check_basic.assert_called_once()
 
-    @patch('monitorpy.plugins.mail_server.MailServerPlugin._check_server_basic')
+    @patch("monitorpy.plugins.mail_server.MailServerPlugin._check_server_basic")
     def test_smtp_basic_check_ssl(self, mock_check_basic):
         """Test basic SMTP server check with SSL."""
         # Mock the _check_server_basic method to return a success result
@@ -120,8 +131,8 @@ class TestMailServerPlugin(unittest.TestCase):
                 "hostname": "mail.example.com",
                 "port": 465,
                 "protocol": "smtp",
-                "use_ssl": True
-            }
+                "use_ssl": True,
+            },
         )
 
         # Create plugin and run check
@@ -142,7 +153,7 @@ class TestMailServerPlugin(unittest.TestCase):
         self.assertEqual(plugin.config["use_ssl"], True)
         self.assertEqual(plugin.config["port"], 465)
 
-    @patch('imaplib.IMAP4')
+    @patch("imaplib.IMAP4")
     def test_imap_basic_check(self, mock_imap):
         """Test basic IMAP server check."""
         # Configure mock
@@ -150,7 +161,10 @@ class TestMailServerPlugin(unittest.TestCase):
         mock_imap.return_value = mock_server
 
         # Mock capability response
-        mock_server.capability.return_value = ('OK', [b'IMAP4rev1 STARTTLS AUTH=PLAIN AUTH=LOGIN IDLE NAMESPACE'])
+        mock_server.capability.return_value = (
+            "OK",
+            [b"IMAP4rev1 STARTTLS AUTH=PLAIN AUTH=LOGIN IDLE NAMESPACE"],
+        )
 
         # Create plugin and run check
         config = self.base_config.copy()
@@ -169,7 +183,7 @@ class TestMailServerPlugin(unittest.TestCase):
         mock_server.capability.assert_called_once()
         mock_server.logout.assert_called_once()
 
-    @patch('poplib.POP3')
+    @patch("poplib.POP3")
     def test_pop3_basic_check(self, mock_pop3):
         """Test basic POP3 server check."""
         # Configure mock
@@ -180,7 +194,10 @@ class TestMailServerPlugin(unittest.TestCase):
         mock_server.getwelcome.return_value = "+OK POP3 server ready"
 
         # Mock capabilities
-        mock_server.capa.return_value = (b'+OK', [b'USER', b'PIPELINING', b'UIDL', b'TOP'])
+        mock_server.capa.return_value = (
+            b"+OK",
+            [b"USER", b"PIPELINING", b"UIDL", b"TOP"],
+        )
 
         # Create plugin and run check
         config = self.base_config.copy()
@@ -199,7 +216,7 @@ class TestMailServerPlugin(unittest.TestCase):
         mock_server.getwelcome.assert_called_once()
         mock_server.quit.assert_called_once()
 
-    @patch('socket.create_connection')
+    @patch("socket.create_connection")
     def test_connection_timeout(self, mock_socket):
         """Test handling of connection timeout."""
         # Mock socket timeout
@@ -215,7 +232,7 @@ class TestMailServerPlugin(unittest.TestCase):
         self.assertIn("Connection", result.message)
         self.assertIn("timed out", result.message)
 
-    @patch('socket.create_connection')
+    @patch("socket.create_connection")
     def test_connection_refused(self, mock_socket):
         """Test handling of connection refused."""
         # Mock connection refused
@@ -231,7 +248,7 @@ class TestMailServerPlugin(unittest.TestCase):
         self.assertIn("Connection", result.message)
         self.assertIn("refused", result.message)
 
-    @patch('monitorpy.plugins.mail_server.MailServerPlugin._check_server_basic')
+    @patch("monitorpy.plugins.mail_server.MailServerPlugin._check_server_basic")
     def test_mx_resolution(self, mock_check_basic):
         """Test MX record resolution functionality."""
         # Mock the _check_server_basic method to return a success result
@@ -241,8 +258,8 @@ class TestMailServerPlugin(unittest.TestCase):
             1.0,
             {
                 "mx_records": ["primary-mx.example.com", "secondary-mx.example.com"],
-                "hostname_used": "primary-mx.example.com"
-            }
+                "hostname_used": "primary-mx.example.com",
+            },
         )
 
         # Create plugin with resolve_mx enabled
@@ -262,7 +279,7 @@ class TestMailServerPlugin(unittest.TestCase):
         # Verify the _check_server_basic method was called
         mock_check_basic.assert_called_once()
 
-    @patch('smtplib.SMTP')
+    @patch("smtplib.SMTP")
     def test_smtp_authenticated_check(self, mock_smtp):
         """Test SMTP server check with authentication."""
         # Configure mock
@@ -288,7 +305,7 @@ class TestMailServerPlugin(unittest.TestCase):
         # Verify login was called
         mock_server.login.assert_called_once_with("user@example.com", "password123")
 
-    @patch('smtplib.SMTP')
+    @patch("smtplib.SMTP")
     def test_smtp_authentication_failure(self, mock_smtp):
         """Test SMTP server check with failed authentication."""
         # Configure mock
@@ -299,7 +316,9 @@ class TestMailServerPlugin(unittest.TestCase):
         mock_server.ehlo.return_value = (250, b"mail.example.com Hello client")
 
         # Mock authentication failure
-        mock_server.login.side_effect = smtplib.SMTPAuthenticationError(535, b"Authentication failed")
+        mock_server.login.side_effect = smtplib.SMTPAuthenticationError(
+            535, b"Authentication failed"
+        )
 
         # Create plugin with authentication
         config = self.base_config.copy()
@@ -316,7 +335,7 @@ class TestMailServerPlugin(unittest.TestCase):
         # Verify login was called
         mock_server.login.assert_called_once_with("user@example.com", "wrong_password")
 
-    @patch('smtplib.SMTP')
+    @patch("smtplib.SMTP")
     def test_smtp_test_email(self, mock_smtp):
         """Test SMTP server check with sending test email."""
         # Configure mock
@@ -347,7 +366,7 @@ class TestMailServerPlugin(unittest.TestCase):
         # Verify send_message was called
         mock_server.send_message.assert_called_once()
 
-    @patch('imaplib.IMAP4')
+    @patch("imaplib.IMAP4")
     def test_imap_authenticated_check(self, mock_imap):
         """Test IMAP server check with authentication."""
         # Configure mock
@@ -355,7 +374,7 @@ class TestMailServerPlugin(unittest.TestCase):
         mock_imap.return_value = mock_server
 
         # Mock select response for inbox
-        mock_server.select.return_value = ('OK', [b'22'])  # 22 messages in inbox
+        mock_server.select.return_value = ("OK", [b"22"])  # 22 messages in inbox
 
         # Create plugin with authentication
         config = self.base_config.copy()
@@ -374,9 +393,9 @@ class TestMailServerPlugin(unittest.TestCase):
 
         # Verify login and select were called
         mock_server.login.assert_called_once_with("user@example.com", "password123")
-        mock_server.select.assert_called_once_with('INBOX', readonly=True)
+        mock_server.select.assert_called_once_with("INBOX", readonly=True)
 
-    @patch('imaplib.IMAP4')
+    @patch("imaplib.IMAP4")
     def test_imap_authentication_failure(self, mock_imap):
         """Test IMAP server check with failed authentication."""
         # Configure mock
@@ -403,7 +422,7 @@ class TestMailServerPlugin(unittest.TestCase):
         # Verify login was called
         mock_server.login.assert_called_once_with("user@example.com", "wrong_password")
 
-    @patch('poplib.POP3')
+    @patch("poplib.POP3")
     def test_pop3_authenticated_check(self, mock_pop3):
         """Test POP3 server check with authentication."""
         # Configure mock
@@ -432,7 +451,7 @@ class TestMailServerPlugin(unittest.TestCase):
         mock_server.pass_.assert_called_once_with("password123")
         mock_server.stat.assert_called_once()
 
-    @patch('poplib.POP3')
+    @patch("poplib.POP3")
     def test_pop3_authentication_failure(self, mock_pop3):
         """Test POP3 server check with failed authentication."""
         # Configure mock
@@ -463,9 +482,10 @@ class TestMailServerPlugin(unittest.TestCase):
         mock_server.user.assert_called_once_with("user@example.com")
         mock_server.pass_.assert_called_once_with("wrong_password")
 
-    @patch('monitorpy.plugins.mail_server.MailServerPlugin._check_smtp')
+    @patch("monitorpy.plugins.mail_server.MailServerPlugin._check_smtp")
     def test_smtp_with_tls(self, mock_check_smtp):
         """Test SMTP server check with STARTTLS."""
+
         # Need to make sure the mocked method gets used when called by run_check
         def mock_smtp_implementation(*args, **kwargs):
             return CheckResult(
@@ -477,8 +497,8 @@ class TestMailServerPlugin(unittest.TestCase):
                     "port": 25,
                     "protocol": "smtp",
                     "use_tls": True,
-                    "tls_response": "250 mail.example.com Hello client"
-                }
+                    "tls_response": "250 mail.example.com Hello client",
+                },
             )
 
         mock_check_smtp.side_effect = mock_smtp_implementation
@@ -486,7 +506,9 @@ class TestMailServerPlugin(unittest.TestCase):
         # Create plugin with TLS
         config = self.base_config.copy()
         config["use_tls"] = True
-        config["username"] = "user@example.com"  # Adding credentials to ensure _check_smtp is called
+        config["username"] = (
+            "user@example.com"  # Adding credentials to ensure _check_smtp is called
+        )
         config["password"] = "password123"
         plugin = MailServerPlugin(config)
 
@@ -499,5 +521,5 @@ class TestMailServerPlugin(unittest.TestCase):
         mock_check_smtp.assert_called_once()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,7 @@
 """
 Tests for the DNS record plugin.
 """
+
 import unittest
 from unittest.mock import patch, Mock, MagicMock
 import socket
@@ -16,11 +17,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.base_config = {
-            "domain": "example.com",
-            "record_type": "A",
-            "timeout": 5
-        }
+        self.base_config = {"domain": "example.com", "record_type": "A", "timeout": 5}
 
     def test_get_required_config(self):
         """Test get_required_config returns the expected values."""
@@ -52,33 +49,39 @@ class TestDNSRecordPlugin(unittest.TestCase):
 
     def test_validate_config_invalid_record_type(self):
         """Test validation with invalid record type."""
-        plugin = DNSRecordPlugin({
-            "domain": "example.com",
-            "record_type": "INVALID"  # Not a valid DNS record type
-        })
+        plugin = DNSRecordPlugin(
+            {
+                "domain": "example.com",
+                "record_type": "INVALID",  # Not a valid DNS record type
+            }
+        )
         self.assertFalse(plugin.validate_config())
 
     def test_validate_config_invalid_propagation_threshold(self):
         """Test validation with invalid propagation threshold."""
-        plugin = DNSRecordPlugin({
-            "domain": "example.com",
-            "record_type": "A",
-            "check_propagation": True,
-            "propagation_threshold": 101  # Invalid: > 100%
-        })
+        plugin = DNSRecordPlugin(
+            {
+                "domain": "example.com",
+                "record_type": "A",
+                "check_propagation": True,
+                "propagation_threshold": 101,  # Invalid: > 100%
+            }
+        )
         self.assertFalse(plugin.validate_config())
 
     def test_validate_config_invalid_resolvers(self):
         """Test validation with invalid resolvers."""
-        plugin = DNSRecordPlugin({
-            "domain": "example.com",
-            "record_type": "A",
-            "check_propagation": True,
-            "resolvers": ["not an IP address"]  # Invalid IP format
-        })
+        plugin = DNSRecordPlugin(
+            {
+                "domain": "example.com",
+                "record_type": "A",
+                "check_propagation": True,
+                "resolvers": ["not an IP address"],  # Invalid IP format
+            }
+        )
         self.assertFalse(plugin.validate_config())
 
-    @patch('dns.resolver.Resolver')
+    @patch("dns.resolver.Resolver")
     def test_run_check_success(self, mock_resolver_class):
         """Test successful DNS record check."""
         # Set up mock resolver
@@ -108,7 +111,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
         # Verify the resolve method was called with expected arguments
         mock_resolver.resolve.assert_called_once_with("example.com", "A")
 
-    @patch('dns.resolver.Resolver')
+    @patch("dns.resolver.Resolver")
     def test_run_check_expected_value_match(self, mock_resolver_class):
         """Test DNS record check with matching expected value."""
         # Set up mock resolver
@@ -136,7 +139,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
         self.assertIn("matches expected value", result.message)
         self.assertTrue(result.raw_data["expected_value_match"])
 
-    @patch('dns.resolver.Resolver')
+    @patch("dns.resolver.Resolver")
     def test_run_check_expected_value_mismatch(self, mock_resolver_class):
         """Test DNS record check with non-matching expected value."""
         # Set up mock resolver
@@ -165,7 +168,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
         self.assertIn("not found", result.message)
         self.assertFalse(result.raw_data["expected_value_match"])
 
-    @patch('dns.resolver.Resolver')
+    @patch("dns.resolver.Resolver")
     def test_run_check_nxdomain(self, mock_resolver_class):
         """Test DNS record check for non-existent domain."""
         # Set up mock resolver
@@ -174,6 +177,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
 
         # Mock NXDOMAIN exception
         import dns.resolver
+
         mock_resolver.resolve.side_effect = dns.resolver.NXDOMAIN()
 
         # Create plugin and run check
@@ -185,7 +189,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
         self.assertIn("does not exist", result.message)
         self.assertEqual(result.raw_data["error"], "NXDOMAIN")
 
-    @patch('dns.resolver.Resolver')
+    @patch("dns.resolver.Resolver")
     def test_run_check_no_answer(self, mock_resolver_class):
         """Test DNS record check with no answer for the requested type."""
         # Set up mock resolver
@@ -194,6 +198,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
 
         # Mock NoAnswer exception
         import dns.resolver
+
         mock_resolver.resolve.side_effect = dns.resolver.NoAnswer()
 
         # Create plugin and run check
@@ -205,7 +210,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
         self.assertIn("No A records found", result.message)
         self.assertEqual(result.raw_data["error"], "NoAnswer")
 
-    @patch('dns.resolver.Resolver')
+    @patch("dns.resolver.Resolver")
     def test_run_check_timeout(self, mock_resolver_class):
         """Test DNS record check with timeout."""
         # Set up mock resolver
@@ -214,6 +219,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
 
         # Mock Timeout exception
         import dns.resolver
+
         mock_resolver.resolve.side_effect = dns.resolver.Timeout()
 
         # Create plugin and run check
@@ -225,9 +231,11 @@ class TestDNSRecordPlugin(unittest.TestCase):
         self.assertIn("Timeout", result.message)
         self.assertEqual(result.raw_data["error"], "Timeout")
 
-    @patch('monitorpy.plugins.dns_plugin.DNSRecordPlugin._check_propagation')
-    @patch('dns.resolver.Resolver')
-    def test_run_check_with_propagation(self, mock_resolver_class, mock_check_propagation):
+    @patch("monitorpy.plugins.dns_plugin.DNSRecordPlugin._check_propagation")
+    @patch("dns.resolver.Resolver")
+    def test_run_check_with_propagation(
+        self, mock_resolver_class, mock_check_propagation
+    ):
         """Test DNS record check with propagation checking."""
         # Set up mock resolver
         mock_resolver = MagicMock()
@@ -250,7 +258,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
             "consistent_count": 8,
             "percentage": 100.0,
             "threshold": 80,
-            "resolvers": []  # Would contain details about each resolver checked
+            "resolvers": [],  # Would contain details about each resolver checked
         }
 
         # Create plugin with propagation checking enabled
@@ -268,9 +276,11 @@ class TestDNSRecordPlugin(unittest.TestCase):
         # Verify propagation check was called
         mock_check_propagation.assert_called_once()
 
-    @patch('monitorpy.plugins.dns_plugin.DNSRecordPlugin._check_propagation')
-    @patch('dns.resolver.Resolver')
-    def test_run_check_with_poor_propagation(self, mock_resolver_class, mock_check_propagation):
+    @patch("monitorpy.plugins.dns_plugin.DNSRecordPlugin._check_propagation")
+    @patch("dns.resolver.Resolver")
+    def test_run_check_with_poor_propagation(
+        self, mock_resolver_class, mock_check_propagation
+    ):
         """Test DNS record check with poor propagation."""
         # Set up mock resolver
         mock_resolver = MagicMock()
@@ -293,7 +303,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
             "consistent_count": 4,  # Only 50% consistent
             "percentage": 50.0,
             "threshold": 80,
-            "resolvers": []
+            "resolvers": [],
         }
 
         # Create plugin with propagation checking enabled
@@ -304,14 +314,17 @@ class TestDNSRecordPlugin(unittest.TestCase):
         result = plugin.run_check()
 
         # Verify result
-        self.assertEqual(result.status,
-                         CheckResult.STATUS_ERROR)  # Overall status should be ERROR due to poor propagation
+        self.assertEqual(
+            result.status, CheckResult.STATUS_ERROR
+        )  # Overall status should be ERROR due to poor propagation
         self.assertIn("Poor propagation", result.message)
         self.assertEqual(result.raw_data["propagation"]["percentage"], 50.0)
 
-    @patch('monitorpy.plugins.dns_plugin.DNSRecordPlugin._check_authoritative')
-    @patch('dns.resolver.Resolver')
-    def test_run_check_with_authoritative(self, mock_resolver_class, mock_check_authoritative):
+    @patch("monitorpy.plugins.dns_plugin.DNSRecordPlugin._check_authoritative")
+    @patch("dns.resolver.Resolver")
+    def test_run_check_with_authoritative(
+        self, mock_resolver_class, mock_check_authoritative
+    ):
         """Test DNS record check with authoritative checking."""
         # Set up mock resolver
         mock_resolver = MagicMock()
@@ -330,7 +343,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
         mock_check_authoritative.return_value = {
             "is_authoritative": True,
             "nameserver": "ns1.example.com",
-            "flags": "QR AA RD"
+            "flags": "QR AA RD",
         }
 
         # Create plugin with authoritative checking enabled
@@ -348,9 +361,11 @@ class TestDNSRecordPlugin(unittest.TestCase):
         # Verify authoritative check was called
         mock_check_authoritative.assert_called_once()
 
-    @patch('monitorpy.plugins.dns_plugin.DNSRecordPlugin._check_authoritative')
-    @patch('dns.resolver.Resolver')
-    def test_run_check_with_non_authoritative(self, mock_resolver_class, mock_check_authoritative):
+    @patch("monitorpy.plugins.dns_plugin.DNSRecordPlugin._check_authoritative")
+    @patch("dns.resolver.Resolver")
+    def test_run_check_with_non_authoritative(
+        self, mock_resolver_class, mock_check_authoritative
+    ):
         """Test DNS record check with non-authoritative response."""
         # Set up mock resolver
         mock_resolver = MagicMock()
@@ -368,7 +383,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
         # Mock authoritative check result indicating non-authoritative
         mock_check_authoritative.return_value = {
             "is_authoritative": False,
-            "error": "Could not determine authoritative nameservers"
+            "error": "Could not determine authoritative nameservers",
         }
 
         # Create plugin with authoritative checking enabled
@@ -379,12 +394,14 @@ class TestDNSRecordPlugin(unittest.TestCase):
         result = plugin.run_check()
 
         # Verify result
-        self.assertEqual(result.status, CheckResult.STATUS_WARNING)  # Should be WARNING for non-authoritative
+        self.assertEqual(
+            result.status, CheckResult.STATUS_WARNING
+        )  # Should be WARNING for non-authoritative
         self.assertIn("Non-authoritative response", result.message)
         self.assertFalse(result.raw_data["authoritative"]["is_authoritative"])
 
-    @patch('monitorpy.plugins.dns_plugin.DNSRecordPlugin._check_dnssec')
-    @patch('dns.resolver.Resolver')
+    @patch("monitorpy.plugins.dns_plugin.DNSRecordPlugin._check_dnssec")
+    @patch("dns.resolver.Resolver")
     def test_run_check_with_dnssec(self, mock_resolver_class, mock_check_dnssec):
         """Test DNS record check with DNSSEC validation."""
         # Set up mock resolver
@@ -404,7 +421,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
         mock_check_dnssec.return_value = {
             "is_valid": True,
             "is_signed": True,
-            "flags": "QR RD RA AD"  # AD flag indicates DNSSEC validation
+            "flags": "QR RD RA AD",  # AD flag indicates DNSSEC validation
         }
 
         # Create plugin with DNSSEC checking enabled
@@ -423,9 +440,11 @@ class TestDNSRecordPlugin(unittest.TestCase):
         # Verify DNSSEC check was called
         mock_check_dnssec.assert_called_once()
 
-    @patch('monitorpy.plugins.dns_plugin.DNSRecordPlugin._check_dnssec')
-    @patch('dns.resolver.Resolver')
-    def test_run_check_with_dnssec_failure(self, mock_resolver_class, mock_check_dnssec):
+    @patch("monitorpy.plugins.dns_plugin.DNSRecordPlugin._check_dnssec")
+    @patch("dns.resolver.Resolver")
+    def test_run_check_with_dnssec_failure(
+        self, mock_resolver_class, mock_check_dnssec
+    ):
         """Test DNS record check with DNSSEC validation failure."""
         # Set up mock resolver
         mock_resolver = MagicMock()
@@ -444,7 +463,7 @@ class TestDNSRecordPlugin(unittest.TestCase):
         mock_check_dnssec.return_value = {
             "is_valid": False,
             "is_signed": True,
-            "error": "DNSSEC validation failed"
+            "error": "DNSSEC validation failed",
         }
 
         # Create plugin with DNSSEC checking enabled
@@ -455,11 +474,15 @@ class TestDNSRecordPlugin(unittest.TestCase):
         result = plugin.run_check()
 
         # Verify result
-        self.assertEqual(result.status, CheckResult.STATUS_ERROR)  # Should be ERROR for DNSSEC failure
+        self.assertEqual(
+            result.status, CheckResult.STATUS_ERROR
+        )  # Should be ERROR for DNSSEC failure
         self.assertIn("DNSSEC validation failed", result.message)
         self.assertFalse(result.raw_data["dnssec"]["is_valid"])
-        self.assertTrue(result.raw_data["dnssec"]["is_signed"])  # It's signed but validation failed
+        self.assertTrue(
+            result.raw_data["dnssec"]["is_signed"]
+        )  # It's signed but validation failed
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

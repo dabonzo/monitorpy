@@ -57,23 +57,17 @@ def main():
         except ImportError:
             print("Warning: Could not import configuration module. Using defaults.")
     
-    # Try different import approaches
+    # Import API modules
     try:
-        # Try the nested module structure
-        from monitorpy.monitorpy.api import create_app
-        from monitorpy.monitorpy.api.config import DevelopmentConfig, ProductionConfig
+        # Use direct import with new structure
+        from monitorpy.api import create_app
+        from monitorpy.api.config import DevelopmentConfig, ProductionConfig
         config_class = DevelopmentConfig if args.debug else ProductionConfig
     except ImportError:
-        try:
-            # Try direct import
-            from monitorpy.api import create_app
-            from monitorpy.api.config import DevelopmentConfig, ProductionConfig
-            config_class = DevelopmentConfig if args.debug else ProductionConfig
-        except ImportError:
-            print("Error: Could not import MonitorPy API modules.")
-            print("Please make sure MonitorPy is installed correctly:")
-            print("  cd /path/to/monitorpy && pip install -e .")
-            sys.exit(1)
+        print("Error: Could not import MonitorPy API modules.")
+        print("Please make sure MonitorPy is installed correctly:")
+        print("  cd /path/to/monitorpy && pip install -e .")
+        sys.exit(1)
     
     try:
         # Create the Flask app

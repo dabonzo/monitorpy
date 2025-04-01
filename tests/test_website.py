@@ -1,6 +1,7 @@
 """
 Tests for the website status plugin.
 """
+
 import unittest
 import requests  # Added missing import
 from unittest.mock import patch, Mock
@@ -41,10 +42,12 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
 
     def test_validate_config_invalid_url(self):
         """Test validation with invalid URL format."""
-        plugin = WebsiteStatusPlugin({"url": "example.com"})  # Missing http:// or https://
+        plugin = WebsiteStatusPlugin(
+            {"url": "example.com"}
+        )  # Missing http:// or https://
         self.assertFalse(plugin.validate_config())
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_run_check_success(self, mock_request):
         """Test successful website check."""
         # Set up mock response
@@ -58,11 +61,9 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         mock_request.return_value = mock_response
 
         # Create plugin and run check
-        plugin = WebsiteStatusPlugin({
-            "url": "https://example.com",
-            "timeout": 5,
-            "expected_status": 200
-        })
+        plugin = WebsiteStatusPlugin(
+            {"url": "https://example.com", "timeout": 5, "expected_status": 200}
+        )
 
         result = plugin.run_check()
 
@@ -79,7 +80,7 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         self.assertEqual(kwargs["url"], "https://example.com")
         self.assertEqual(kwargs["timeout"], 5)
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_run_check_wrong_status(self, mock_request):
         """Test website check with unexpected status code."""
         # Set up mock response
@@ -93,10 +94,9 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         mock_request.return_value = mock_response
 
         # Create plugin and run check
-        plugin = WebsiteStatusPlugin({
-            "url": "https://example.com",
-            "expected_status": 200
-        })
+        plugin = WebsiteStatusPlugin(
+            {"url": "https://example.com", "expected_status": 200}
+        )
 
         result = plugin.run_check()
 
@@ -106,7 +106,7 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         self.assertIn("Expected status: 200", result.message)
         self.assertIn("actual: 404", result.message)
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_run_check_content_match(self, mock_request):
         """Test website check with content matching."""
         # Set up mock response
@@ -120,10 +120,9 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         mock_request.return_value = mock_response
 
         # Create plugin and run check
-        plugin = WebsiteStatusPlugin({
-            "url": "https://example.com",
-            "expected_content": "Welcome"
-        })
+        plugin = WebsiteStatusPlugin(
+            {"url": "https://example.com", "expected_content": "Welcome"}
+        )
 
         result = plugin.run_check()
 
@@ -131,7 +130,7 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         self.assertEqual(result.status, CheckResult.STATUS_SUCCESS)
         self.assertIn("successful", result.message)
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_run_check_content_mismatch(self, mock_request):
         """Test website check with content not matching."""
         # Set up mock response
@@ -145,10 +144,9 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         mock_request.return_value = mock_response
 
         # Create plugin and run check
-        plugin = WebsiteStatusPlugin({
-            "url": "https://example.com",
-            "expected_content": "Missing Content"
-        })
+        plugin = WebsiteStatusPlugin(
+            {"url": "https://example.com", "expected_content": "Missing Content"}
+        )
 
         result = plugin.run_check()
 
@@ -157,7 +155,7 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         self.assertIn("content issues", result.message)
         self.assertTrue(result.raw_data["content_issues"])
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_run_check_unexpected_content(self, mock_request):
         """Test website check with unexpected content present."""
         # Set up mock response
@@ -171,10 +169,9 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         mock_request.return_value = mock_response
 
         # Create plugin and run check
-        plugin = WebsiteStatusPlugin({
-            "url": "https://example.com",
-            "unexpected_content": "Error"
-        })
+        plugin = WebsiteStatusPlugin(
+            {"url": "https://example.com", "unexpected_content": "Error"}
+        )
 
         result = plugin.run_check()
 
@@ -183,7 +180,7 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         self.assertIn("content issues", result.message)
         self.assertTrue(result.raw_data["content_issues"])
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_run_check_with_auth(self, mock_request):
         """Test website check with authentication."""
         # Set up mock response
@@ -197,11 +194,13 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         mock_request.return_value = mock_response
 
         # Create plugin and run check
-        plugin = WebsiteStatusPlugin({
-            "url": "https://example.com",
-            "auth_username": "user",
-            "auth_password": "pass"
-        })
+        plugin = WebsiteStatusPlugin(
+            {
+                "url": "https://example.com",
+                "auth_username": "user",
+                "auth_password": "pass",
+            }
+        )
 
         result = plugin.run_check()
 
@@ -212,13 +211,14 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         args, kwargs = mock_request.call_args
         self.assertEqual(kwargs["auth"], ("user", "pass"))
 
-    @patch('requests.request', side_effect=requests.exceptions.ConnectionError("Connection refused"))
+    @patch(
+        "requests.request",
+        side_effect=requests.exceptions.ConnectionError("Connection refused"),
+    )
     def test_run_check_connection_error(self, mock_request):
         """Test website check with connection error."""
         # Create plugin and run check
-        plugin = WebsiteStatusPlugin({
-            "url": "https://example.com"
-        })
+        plugin = WebsiteStatusPlugin({"url": "https://example.com"})
 
         result = plugin.run_check()
 
@@ -228,14 +228,13 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         self.assertIn("error", result.raw_data)
         self.assertIn("error_type", result.raw_data)
 
-    @patch('requests.request', side_effect=requests.exceptions.Timeout("Request timed out"))
+    @patch(
+        "requests.request", side_effect=requests.exceptions.Timeout("Request timed out")
+    )
     def test_run_check_timeout(self, mock_request):
         """Test website check with timeout."""
         # Create plugin and run check
-        plugin = WebsiteStatusPlugin({
-            "url": "https://example.com",
-            "timeout": 5
-        })
+        plugin = WebsiteStatusPlugin({"url": "https://example.com", "timeout": 5})
 
         result = plugin.run_check()
 
@@ -244,7 +243,7 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         self.assertIn("Connection error", result.message)
         self.assertIn("timed out", result.raw_data["error"].lower())
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_run_check_redirects(self, mock_request):
         """Test website check with redirects."""
         # Set up mock response with history
@@ -264,22 +263,23 @@ class TestWebsiteStatusPlugin(unittest.TestCase):
         mock_request.return_value = final_response
 
         # Create plugin and run check
-        plugin = WebsiteStatusPlugin({
-            "url": "https://example.com/original",
-            "follow_redirects": True
-        })
+        plugin = WebsiteStatusPlugin(
+            {"url": "https://example.com/original", "follow_redirects": True}
+        )
 
         result = plugin.run_check()
 
         # Verify result
         self.assertEqual(result.status, CheckResult.STATUS_SUCCESS)
         self.assertEqual(len(result.raw_data["redirect_history"]), 2)
-        self.assertEqual(result.raw_data["redirect_history"][0], "https://example.com/redirect1")
+        self.assertEqual(
+            result.raw_data["redirect_history"][0], "https://example.com/redirect1"
+        )
 
         # Verify request was called with follow_redirects=True
         args, kwargs = mock_request.call_args
         self.assertTrue(kwargs["allow_redirects"])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
