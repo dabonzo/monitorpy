@@ -1,5 +1,11 @@
 // API Base URL - Update this to match your API endpoint
-const API_BASE_URL = 'http://localhost:5000/api/v1';
+let API_BASE_URL = 'http://localhost:5000/api/v1';
+
+// Enable auto-detection of API URL based on the window location
+if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    // If not localhost, use relative URL (assumes API is on same host)
+    API_BASE_URL = '/api/v1';
+}
 
 // Global variables
 let availablePlugins = [];

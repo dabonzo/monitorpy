@@ -23,7 +23,11 @@ mkdir -p data
 # Start the MonitorPy API in the background
 echo "Starting MonitorPy API on port $MONITORPY_API_PORT..."
 cd $(dirname $0)/..
-python -m monitorpy.monitorpy.cli api --host 0.0.0.0 --port $MONITORPY_API_PORT --debug &
+
+# Use the standalone script for running the API
+echo "Using standalone API script..."
+./run_api_for_demo.py --host 0.0.0.0 --port $MONITORPY_API_PORT --debug &
+
 API_PID=$!
 
 # Wait for API to start
