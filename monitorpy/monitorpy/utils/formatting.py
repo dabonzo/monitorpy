@@ -2,7 +2,7 @@
 Output formatting utilities for the monitorpy package.
 """
 import json
-from typing import Any, Dict
+from typing import Any
 import datetime
 
 from monitorpy.core import CheckResult

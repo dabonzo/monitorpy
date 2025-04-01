@@ -2,7 +2,7 @@
 Website monitoring plugin for checking website availability and content.
 """
 import time
-from typing import Dict, Any, List, Optional
+from typing import List
 
 import requests
 from requests.exceptions import RequestException

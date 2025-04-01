@@ -5,12 +5,13 @@ import argparse
 import json
 import sys
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Optional
 
 from monitorpy.core import registry, run_check
 from monitorpy.utils import setup_logging, format_result, get_logger
 from monitorpy.utils.formatting import ColorFormatter
-import monitorpy.plugins  # Import to register all plugins
+# Import to register all plugins
+from monitorpy import plugins  # noqa: F401
 
 logger = get_logger("cli")
 
@@ -60,7 +61,7 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
 
     # List plugins command
-    list_parser = subparsers.add_parser(
+    subparsers.add_parser(
         "list",
         help="List available plugins",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -73,8 +74,18 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     website_parser.add_argument("url", help="URL to check")
-    website_parser.add_argument("--timeout", type=int, default=30, help="Request timeout in seconds")
-    website_parser.add_argument("--status", type=int, default=200, help="Expected HTTP status code")
+    website_parser.add_argument(
+        "--timeout",
+        type=int,
+        default=30,
+        help="Request timeout in seconds"
+    )
+    website_parser.add_argument(
+        "--status",
+        type=int,
+        default=200,
+        help="Expected HTTP status code"
+    )
     website_parser.add_argument("--method", default="GET", help="HTTP method (GET, POST, etc.)")
     website_parser.add_argument("--header", action="append", help="HTTP header in format 'Name: Value'")
     website_parser.add_argument("--body", help="Request body data")
@@ -110,8 +121,12 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     mail_parser.add_argument("hostname", help="Mail server hostname")
-    mail_parser.add_argument("--protocol", choices=["smtp", "imap", "pop3"], default="smtp",
-                             help="Mail protocol to check")
+    mail_parser.add_argument(
+        "--protocol",
+        choices=["smtp", "imap", "pop3"],
+        default="smtp",
+        help="Mail protocol to check"
+    )
     mail_parser.add_argument("--port", type=int, help="Server port (defaults to standard port for protocol)")
     mail_parser.add_argument("--username", help="Username for authentication")
     mail_parser.add_argument("--password", help="Password for authentication")
@@ -297,7 +312,7 @@ def handle_mail_command(args) -> int:
 
         # Check if we need to install dnspython
         try:
-            import dns.resolver
+            import dns.resolver  # noqa: F401
         except ImportError:
             print("Warning: The dnspython package is required for MX resolution.")
             print("Please install it with: pip install dnspython")
@@ -332,7 +347,10 @@ def handle_mail_command(args) -> int:
                 config["to_email"] = config["from_email"]
 
             config["subject"] = "MonitorPy Mail Test"
-            config["message"] = "This is a test email sent by MonitorPy to verify mail server functionality."
+            config["message"] = (
+                "This is a test email sent by MonitorPy "
+                "to verify mail server functionality."
+            )
 
             logger.info(f"Will send test email from {config['from_email']} to {config['to_email']}")
 
@@ -360,7 +378,7 @@ def handle_dns_command(args) -> int:
     """
     # Check if dnspython is installed
     try:
-        import dns.resolver
+        import dns.resolver  # noqa: F401
     except ImportError:
         print("Error: The dnspython package is required for DNS checks.")
         print("Please install it with: pip install dnspython")

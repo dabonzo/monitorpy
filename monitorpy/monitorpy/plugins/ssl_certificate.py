@@ -6,7 +6,7 @@ import socket
 import ssl
 import urllib.parse
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Tuple
+from typing import List, Tuple
 
 from monitorpy.core import MonitorPlugin, CheckResult, register_plugin
 from monitorpy.utils import get_logger
@@ -149,7 +149,7 @@ class SSLCertificatePlugin(MonitorPlugin):
             if not is_valid_period:
                 status = CheckResult.STATUS_ERROR
                 if now < not_before:
-                    message = f"Certificate not yet valid" # Remove the rest of the message or make it a separate part
+                    message = "Certificate not yet valid"
                 else:
                     message = f"Certificate expired on {expiration.isoformat()}"
             elif days_until_expiration <= critical_days:

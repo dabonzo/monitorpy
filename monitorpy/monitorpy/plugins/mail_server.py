@@ -311,7 +311,7 @@ class MailServerPlugin(MonitorPlugin):
                     message += f". Welcome: {welcome_str}"
 
                 if raw_data.get("capabilities") and raw_data["capabilities"] != "Not supported or error":
-                    message += f". Capabilities available."
+                    message += ". Capabilities available."
 
                 return CheckResult(
                     CheckResult.STATUS_SUCCESS,

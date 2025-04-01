@@ -36,7 +36,7 @@ class PluginRegistry:
             ValueError: If a plugin with the same name is already registered
         """
         if not issubclass(plugin_class, MonitorPlugin):
-            raise TypeError(f"Plugin class must inherit from MonitorPlugin")
+            raise TypeError("Plugin class must inherit from MonitorPlugin")
 
         if name in self.plugins:
             raise ValueError(f"A plugin named '{name}' is already registered")
