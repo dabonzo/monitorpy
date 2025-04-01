@@ -16,4 +16,4 @@ fi
 
 # Run the API server
 echo "Starting MonitorPy API server..."
-python -m monitorpy.monitorpy.cli api --debug
+python -m monitorpy.cli api --debug

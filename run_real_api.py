@@ -41,7 +41,15 @@ def main():
     
     # Set environment variables for configuration
     if args.database:
-        os.environ['DATABASE_URL'] = args.database
+        # Format SQLite URL properly if needed
+        if args.database.endswith('.db') or args.database.endswith('.sqlite') or args.database.endswith('.sql'):
+            # Convert path to SQLAlchemy SQLite URL format
+            db_path = os.path.abspath(args.database)
+            os.environ['DATABASE_URL'] = f'sqlite:///{db_path}'
+            print(f"Using database: {db_path}")
+        else:
+            # Assume it's already a properly formatted SQLAlchemy URL
+            os.environ['DATABASE_URL'] = args.database
     else:
         # Use in-memory SQLite as default for simplicity
         os.environ['DATABASE_URL'] = 'sqlite:///:memory:'

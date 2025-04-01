@@ -7,9 +7,10 @@ import json
 import sys
 import os
 import logging
-from typing import Optional
+from typing import Optional, Dict, Any, List
+import concurrent.futures
 
-from monitorpy.core import registry, run_check
+from monitorpy.core import registry, run_check, run_checks_in_parallel
 from monitorpy.utils import setup_logging, format_result, get_logger
 from monitorpy.utils.formatting import ColorFormatter
 from monitorpy.config import load_config, save_sample_config, get_config
@@ -62,6 +63,16 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         help="Log file path (if not specified, logs to stdout only)",
     )
     parser.add_argument("--config", help="Path to configuration file")
+    parser.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Run multiple checks in parallel (when applicable)",
+    )
+    parser.add_argument(
+        "--max-workers",
+        type=int,
+        help="Maximum number of parallel workers (default: CPU count + 4)",
+    )
 
     # Create subparsers for different commands
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
@@ -102,6 +113,37 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     api_parser.add_argument("--debug", action="store_true", help="Run in debug mode")
     api_parser.add_argument(
         "--database", type=str, help="Database URL (defaults to SQLite)"
+    )
+
+    # Batch check command
+    batch_parser = subparsers.add_parser(
+        "batch",
+        help="Run multiple checks in parallel",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    batch_parser.add_argument(
+        "checks_file", help="JSON file containing check configurations"
+    )
+    batch_parser.add_argument(
+        "--output", help="Output file for results (default: stdout)"
+    )
+    batch_parser.add_argument(
+        "--max-workers", type=int, help="Maximum number of parallel workers"
+    )
+    batch_parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=10,
+        help="Batch size for processing large numbers of checks",
+    )
+    batch_parser.add_argument(
+        "--timeout", type=float, help="Timeout in seconds for each batch"
+    )
+    batch_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Show detailed output"
+    )
+    batch_parser.add_argument(
+        "--json", action="store_true", help="Output results as JSON"
     )
 
     # Check website command
@@ -148,6 +190,10 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     website_parser.add_argument(
         "--json", action="store_true", help="Output results as JSON"
     )
+    website_parser.add_argument(
+        "--sites",
+        help="File with list of URLs to check (one per line, will be checked in parallel with --parallel)",
+    )
 
     # Check SSL certificate command
     ssl_parser = subparsers.add_parser(
@@ -179,6 +225,10 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     )
     ssl_parser.add_argument(
         "--json", action="store_true", help="Output results as JSON"
+    )
+    ssl_parser.add_argument(
+        "--hosts",
+        help="File with list of hostnames to check (one per line, will be checked in parallel with --parallel)",
     )
 
     # Mail server check command
@@ -232,6 +282,10 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         dest="resolve_mx",
         default=True,  # Make this the default behavior
         help="Don't resolve MX records for domain (resolve_mx is enabled by default)",
+    )
+    mail_parser.add_argument(
+        "--servers",
+        help="File with list of mail servers to check (one per line, will be checked in parallel with --parallel)",
     )
 
     dns_parser = subparsers.add_parser(
@@ -290,95 +344,137 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     dns_parser.add_argument(
         "--json", action="store_true", help="Output results as JSON"
     )
+    dns_parser.add_argument(
+        "--domains",
+        help="File with list of domains to check (one per line, will be checked in parallel with --parallel)",
+    )
 
     return parser
 
 
-def handle_list_command() -> int:
-    """
-    Handle the 'list' command to display available plugins.
+def handle_website_command(args):
+    """Handle the website check command."""
+    # If urls file is provided and parallel flag is set, run multiple checks
+    if args.sites and args.parallel:
+        return handle_parallel_websites(args)
 
-    Returns:
-        int: Exit code (0 for success)
-    """
-    print(ColorFormatter.highlight("Available plugins:"))
-    for name, info in registry.get_all_plugins().items():
-        print(f"\n{ColorFormatter.highlight(name)}:")
-        print(f"  Description: {info['description']}")
-        print(f"  Required config: {', '.join(info['required_config'])}")
-        print(f"  Optional config: {', '.join(info['optional_config'])}")
+    # Parse headers if provided
+    headers = {}
+    if args.header:
+        for header_str in args.header:
+            parsed = parse_header(header_str)
+            if parsed:
+                name, value = parsed
+                headers[name] = value
 
-    return 0
-
-
-def handle_website_command(args) -> int:
-    """
-    Handle the 'website' command to check a website.
-
-    Args:
-        args: Command-line arguments
-
-    Returns:
-        int: Exit code (0 for success, non-zero for errors)
-    """
     config = {
         "url": args.url,
         "timeout": args.timeout,
         "expected_status": args.status,
         "method": args.method,
+        "headers": headers,
+        "body": args.body,
+        "auth_username": args.auth_username,
+        "auth_password": args.auth_password,
         "verify_ssl": not args.no_verify,
         "follow_redirects": not args.no_redirect,
+        "expected_content": args.content,
+        "unexpected_content": args.no_content,
+    }
+
+    result = run_check("website_status", config)
+    return result
+
+
+def handle_parallel_websites(args):
+    """Handle parallel website checks."""
+    # Read URLs from file
+    try:
+        with open(args.sites, "r") as f:
+            urls = [line.strip() for line in f if line.strip()]
+    except Exception as e:
+        logger.error(f"Error reading URLs file: {str(e)}")
+        return None
+
+    # Set up base configuration
+    base_config = {
+        "timeout": args.timeout,
+        "expected_status": args.status,
+        "method": args.method,
+        "verify_ssl": not args.no_verify,
+        "follow_redirects": not args.no_redirect,
+        "expected_content": args.content,
+        "unexpected_content": args.no_content,
     }
 
     # Parse headers if provided
+    headers = {}
     if args.header:
-        headers = {}
         for header_str in args.header:
-            header = parse_header(header_str)
-            if header:
-                headers[header[0]] = header[1]
+            parsed = parse_header(header_str)
+            if parsed:
+                name, value = parsed
+                headers[name] = value
 
-        if headers:
-            config["headers"] = headers
+    if headers:
+        base_config["headers"] = headers
 
-    # Add other optional configuration
-    if args.body:
-        config["body"] = args.body
+    if args.auth_username and args.auth_password:
+        base_config["auth_username"] = args.auth_username
+        base_config["auth_password"] = args.auth_password
 
-    if args.content:
-        config["expected_content"] = args.content
+    # Create check configurations for each URL
+    check_configs = []
+    for i, url in enumerate(urls):
+        config = base_config.copy()
+        config["url"] = url
+        check_configs.append(
+            {"id": f"url{i+1}", "plugin_type": "website_status", "config": config}
+        )
 
-    if args.no_content:
-        config["unexpected_content"] = args.no_content
+    # Run checks in parallel
+    max_workers = args.max_workers
+    results = run_checks_in_parallel(check_configs, max_workers)
 
-    if args.auth_username:
-        config["auth_username"] = args.auth_username
+    # Print summary
+    total = len(results)
+    success = sum(1 for _, result in results if result.status == "success")
+    warning = sum(1 for _, result in results if result.status == "warning")
+    error = sum(1 for _, result in results if result.status == "error")
 
-    if args.auth_password:
-        config["auth_password"] = args.auth_password
+    output = []
+    output.append(f"\nParallel Website Check Results ({success}/{total} successful):")
+    output.append(f"  Success: {success}, Warning: {warning}, Error: {error}")
+    output.append("")
 
-    result = run_check("website_status", config)
+    # Print detailed results if verbose
+    if args.verbose:
+        for check_config, result in results:
+            url = check_config["config"]["url"]
+            output.append(f"URL: {url}")
+            output.append(f"  Status: {result.status}")
+            output.append(f"  Message: {result.message}")
+            output.append(f"  Response Time: {result.response_time:.3f}s")
+            if result.raw_data and args.verbose:
+                output.append("  Details:")
+                for key, value in result.raw_data.items():
+                    if key != "response_headers":  # Skip verbose headers
+                        output.append(f"    {key}: {value}")
+            output.append("")
 
-    if args.json:
-        print(json.dumps(result.to_dict(), indent=2))
-    else:
-        print(format_result(result, args.verbose))
-
-    return 0 if result.is_success() else (1 if result.is_warning() else 2)
+    combined_result = "\n".join(output)
+    return combined_result
 
 
-def handle_ssl_command(args) -> int:
-    """
-    Handle the 'ssl' command to check an SSL certificate.
+def handle_ssl_command(args):
+    """Handle the SSL certificate check command."""
+    # If hosts file is provided and parallel flag is set, run multiple checks
+    if args.hosts and args.parallel:
+        return handle_parallel_ssl(args)
 
-    Args:
-        args: Command-line arguments
-
-    Returns:
-        int: Exit code (0 for success, non-zero for errors)
-    """
     config = {
         "hostname": args.hostname,
+        "port": args.port,
         "timeout": args.timeout,
         "warning_days": args.warning,
         "critical_days": args.critical,
@@ -386,289 +482,503 @@ def handle_ssl_command(args) -> int:
         "verify_hostname": not args.no_verify_hostname,
     }
 
-    if args.port:
-        config["port"] = args.port
-
     result = run_check("ssl_certificate", config)
-
-    if args.json:
-        print(json.dumps(result.to_dict(), indent=2))
-    else:
-        print(format_result(result, args.verbose))
-
-    return 0 if result.is_success() else (1 if result.is_warning() else 2)
+    return result
 
 
-def handle_mail_command(args) -> int:
-    """
-    Handle the 'mail' command to check a mail server.
+def handle_parallel_ssl(args):
+    """Handle parallel SSL certificate checks."""
+    # Read hostnames from file
+    try:
+        with open(args.hosts, "r") as f:
+            hostnames = [line.strip() for line in f if line.strip()]
+    except Exception as e:
+        logger.error(f"Error reading hosts file: {str(e)}")
+        return None
 
-    Args:
-        args: Command-line arguments
+    # Set up base configuration
+    base_config = {
+        "port": args.port,
+        "timeout": args.timeout,
+        "warning_days": args.warning,
+        "critical_days": args.critical,
+        "check_chain": args.check_chain,
+        "verify_hostname": not args.no_verify_hostname,
+    }
 
-    Returns:
-        int: Exit code (0 for success, non-zero for errors)
-    """
+    # Create check configurations for each hostname
+    check_configs = []
+    for i, hostname in enumerate(hostnames):
+        config = base_config.copy()
+        config["hostname"] = hostname
+        check_configs.append(
+            {"id": f"host{i+1}", "plugin_type": "ssl_certificate", "config": config}
+        )
+
+    # Run checks in parallel
+    max_workers = args.max_workers
+    results = run_checks_in_parallel(check_configs, max_workers)
+
+    # Print summary
+    total = len(results)
+    success = sum(1 for _, result in results if result.status == "success")
+    warning = sum(1 for _, result in results if result.status == "warning")
+    error = sum(1 for _, result in results if result.status == "error")
+
+    output = []
+    output.append(
+        f"\nParallel SSL Certificate Check Results ({success}/{total} successful):"
+    )
+    output.append(f"  Success: {success}, Warning: {warning}, Error: {error}")
+    output.append("")
+
+    # Print detailed results if verbose
+    if args.verbose:
+        for check_config, result in results:
+            hostname = check_config["config"]["hostname"]
+            output.append(f"Host: {hostname}")
+            output.append(f"  Status: {result.status}")
+            output.append(f"  Message: {result.message}")
+            output.append(f"  Response Time: {result.response_time:.3f}s")
+            if result.raw_data and args.verbose:
+                output.append("  Details:")
+                for key, value in result.raw_data.items():
+                    if key in [
+                        "issuer",
+                        "subject",
+                        "valid_from",
+                        "valid_until",
+                        "days_remaining",
+                    ]:
+                        output.append(f"    {key}: {value}")
+            output.append("")
+
+    combined_result = "\n".join(output)
+    return combined_result
+
+
+def handle_mail_command(args):
+    """Handle the mail server check command."""
+    # If servers file is provided and parallel flag is set, run multiple checks
+    if args.servers and args.parallel:
+        return handle_parallel_mail(args)
+
     config = {
         "hostname": args.hostname,
         "protocol": args.protocol,
+        "port": args.port,
+        "username": args.username,
+        "password": args.password,
+        "use_ssl": args.ssl,
+        "use_tls": args.tls,
         "timeout": args.timeout,
+        "test_send": args.send_test,
+        "from_email": args.from_email,
+        "to_email": args.to_email,
+        "resolve_mx": args.resolve_mx,
     }
 
-    # Add SSL/TLS configuration
-    if args.ssl:
-        config["use_ssl"] = True
-
-    if args.protocol == "smtp" and args.tls:
-        config["use_tls"] = True
-
-    # Add custom port if specified
-    if args.port:
-        config["port"] = args.port
-
-    # Handle MX resolution
-    if args.resolve_mx:
-        config["resolve_mx"] = True
-
-        # Check if we need to install dnspython
-        try:
-            import dns.resolver  # noqa: F401
-        except ImportError:
-            print("Warning: The dnspython package is required for MX resolution.")
-            print("Please install it with: pip install dnspython")
-            return 2
-
-    # Determine if we're doing a basic check or authenticated check
-    if args.basic_check:
-        # Basic check - don't include credentials
-        logger.info(
-            f"Performing basic {args.protocol.upper()} server check for {args.hostname}"
-        )
-    else:
-        # Include authentication if provided
-        if args.username:
-            config["username"] = args.username
-
-        if args.password:
-            config["password"] = args.password
-
-        # Only include test email settings if doing SMTP with creds
-        if (
-            args.protocol == "smtp"
-            and args.send_test
-            and args.username
-            and args.password
-        ):
-            config["test_send"] = True
-
-            if args.from_email:
-                config["from_email"] = args.from_email
-            else:
-                # Default from email if not provided
-                config["from_email"] = (
-                    args.username
-                    if "@" in args.username
-                    else f"{args.username}@example.com"
-                )
-
-            if args.to_email:
-                config["to_email"] = args.to_email
-            else:
-                # Default to same address if not provided
-                config["to_email"] = config["from_email"]
-
-            config["subject"] = "MonitorPy Mail Test"
-            config["message"] = (
-                "This is a test email sent by MonitorPy "
-                "to verify mail server functionality."
-            )
-
-            logger.info(
-                f"Will send test email from {config['from_email']} to {config['to_email']}"
-            )
-
-    # Run the appropriate check
     result = run_check("mail_server", config)
-
-    # Output the results
-    if args.json:
-        print(json.dumps(result.to_dict(), indent=2))
-    else:
-        print(format_result(result, args.verbose))
-
-    return 0 if result.is_success() else (1 if result.is_warning() else 2)
+    return result
 
 
-def handle_api_command(args) -> int:
-    """
-    Handle the 'api' command to run the API server.
-
-    Args:
-        args: Command-line arguments
-
-    Returns:
-        int: Exit code (0 for success, non-zero for errors)
-    """
+def handle_parallel_mail(args):
+    """Handle parallel mail server checks."""
+    # Read servers from file
     try:
-        # Set environment variables from command-line arguments
-        if args.database:
-            os.environ["DATABASE_URL"] = args.database
-
-        # Set development mode
-        os.environ["FLASK_ENV"] = "development" if args.debug else "production"
-
-        # Get host and port from config if not specified in args
-        host = args.host or get_config("api", "host", "0.0.0.0")
-        port = args.port or get_config("api", "port", 5000)
-        debug = args.debug or get_config("api", "debug", False)
-
-        print(f"Starting MonitorPy API server on {host}:{port}...")
-        print("Press Ctrl+C to stop the server")
-
-        # Import API app
-        from monitorpy.api import create_app
-        from monitorpy.api.config import get_config as get_api_config
-
-        # Create the Flask app
-        app = create_app(get_api_config())
-
-        # Run the Flask app
-        app.run(host=host, port=port, debug=debug)
-
-        return 0
-
-    except ImportError:
-        print("Error: API dependencies are not installed.")
-        print("Please install the required packages:")
-        print("  pip install flask flask-sqlalchemy flask-migrate flask-jwt-extended")
-        print(
-            "  pip install flask-marshmallow marshmallow-sqlalchemy flask-cors gunicorn"
-        )
-        return 1
-
+        with open(args.servers, "r") as f:
+            servers = [line.strip() for line in f if line.strip()]
     except Exception as e:
-        print(f"Error starting API server: {str(e)}")
-        return 1
+        logger.error(f"Error reading servers file: {str(e)}")
+        return None
+
+    # Set up base configuration
+    base_config = {
+        "protocol": args.protocol,
+        "port": args.port,
+        "username": args.username,
+        "password": args.password,
+        "use_ssl": args.ssl,
+        "use_tls": args.tls,
+        "timeout": args.timeout,
+        "test_send": args.send_test,
+        "from_email": args.from_email,
+        "to_email": args.to_email,
+        "resolve_mx": args.resolve_mx,
+    }
+
+    # Create check configurations for each server
+    check_configs = []
+    for i, server in enumerate(servers):
+        config = base_config.copy()
+        config["hostname"] = server
+        check_configs.append(
+            {"id": f"server{i+1}", "plugin_type": "mail_server", "config": config}
+        )
+
+    # Run checks in parallel
+    max_workers = args.max_workers
+    results = run_checks_in_parallel(check_configs, max_workers)
+
+    # Print summary
+    total = len(results)
+    success = sum(1 for _, result in results if result.status == "success")
+    warning = sum(1 for _, result in results if result.status == "warning")
+    error = sum(1 for _, result in results if result.status == "error")
+
+    output = []
+    output.append(
+        f"\nParallel Mail Server Check Results ({success}/{total} successful):"
+    )
+    output.append(f"  Success: {success}, Warning: {warning}, Error: {error}")
+    output.append("")
+
+    # Print detailed results if verbose
+    if args.verbose:
+        for check_config, result in results:
+            server = check_config["config"]["hostname"]
+            output.append(f"Server: {server}")
+            output.append(f"  Status: {result.status}")
+            output.append(f"  Message: {result.message}")
+            output.append(f"  Response Time: {result.response_time:.3f}s")
+            if result.raw_data and args.verbose:
+                output.append("  Details:")
+                for key, value in result.raw_data.items():
+                    if key not in ["error_details"]:  # Skip verbose error details
+                        output.append(f"    {key}: {value}")
+            output.append("")
+
+    combined_result = "\n".join(output)
+    return combined_result
 
 
-def handle_dns_command(args) -> int:
-    """
-    Handle the 'dns' command to check DNS records.
+def handle_dns_command(args):
+    """Handle the DNS check command."""
+    # If domains file is provided and parallel flag is set, run multiple checks
+    if args.domains and args.parallel:
+        return handle_parallel_dns(args)
 
-    Args:
-        args: Command-line arguments
-
-    Returns:
-        int: Exit code (0 for success, non-zero for errors)
-    """
-    # Check if dnspython is installed
-    try:
-        import dns.resolver  # noqa: F401
-    except ImportError:
-        print("Error: The dnspython package is required for DNS checks.")
-        print("Please install it with: pip install dnspython")
-        return 2
+    # Combine domain and subdomain if both are provided
+    full_domain = args.domain
+    if args.subdomain:
+        full_domain = f"{args.subdomain}.{args.domain}"
 
     config = {
         "domain": args.domain,
+        "subdomain": args.subdomain,
         "record_type": args.record_type,
+        "expected_value": args.expected_value,
+        "nameserver": args.nameserver,
         "timeout": args.timeout,
+        "check_propagation": args.check_propagation,
+        "resolvers": args.resolvers,
+        "propagation_threshold": args.threshold,
+        "check_authoritative": args.check_authoritative,
+        "check_dnssec": args.check_dnssec,
+        "max_workers": args.max_workers,
     }
 
-    # Add optional configuration
-    if args.expected_value:
-        config["expected_value"] = args.expected_value
+    result = run_check("dns", config)
+    return result
 
-    if args.subdomain:
-        config["subdomain"] = args.subdomain
 
-    if args.nameserver:
-        config["nameserver"] = args.nameserver
+def handle_parallel_dns(args):
+    """Handle parallel DNS checks."""
+    # Read domains from file
+    try:
+        with open(args.domains, "r") as f:
+            domains = [line.strip() for line in f if line.strip()]
+    except Exception as e:
+        logger.error(f"Error reading domains file: {str(e)}")
+        return None
 
-    if args.check_propagation:
-        config["check_propagation"] = True
-        config["propagation_threshold"] = args.threshold
+    # Set up base configuration
+    base_config = {
+        "record_type": args.record_type,
+        "expected_value": args.expected_value,
+        "nameserver": args.nameserver,
+        "timeout": args.timeout,
+        "check_propagation": args.check_propagation,
+        "resolvers": args.resolvers,
+        "propagation_threshold": args.threshold,
+        "check_authoritative": args.check_authoritative,
+        "check_dnssec": args.check_dnssec,
+        "max_workers": args.max_workers,
+    }
 
-        if args.resolvers:
-            config["resolvers"] = args.resolvers
+    # Create check configurations for each domain
+    check_configs = []
+    for i, domain in enumerate(domains):
+        config = base_config.copy()
+        # Check if the domain includes a subdomain part (e.g., www.example.com)
+        parts = domain.split(".", 1)
+        if len(parts) > 1 and len(parts[0].split(".")) == 1:
+            config["domain"] = parts[1]
+            config["subdomain"] = parts[0]
+        else:
+            config["domain"] = domain
 
-    if args.check_authoritative:
-        config["check_authoritative"] = True
+        check_configs.append(
+            {"id": f"domain{i+1}", "plugin_type": "dns", "config": config}
+        )
 
-    if args.check_dnssec:
-        config["check_dnssec"] = True
+    # Run checks in parallel
+    max_workers = args.max_workers
+    results = run_checks_in_parallel(check_configs, max_workers)
 
-    if args.max_workers:
-        config["max_workers"] = args.max_workers
+    # Print summary
+    total = len(results)
+    success = sum(1 for _, result in results if result.status == "success")
+    warning = sum(1 for _, result in results if result.status == "warning")
+    error = sum(1 for _, result in results if result.status == "error")
 
-    result = run_check("dns_record", config)
+    output = []
+    output.append(f"\nParallel DNS Check Results ({success}/{total} successful):")
+    output.append(f"  Success: {success}, Warning: {warning}, Error: {error}")
+    output.append("")
+
+    # Print detailed results if verbose
+    if args.verbose:
+        for check_config, result in results:
+            domain = check_config["config"]["domain"]
+            subdomain = check_config["config"].get("subdomain")
+            full_domain = f"{subdomain}.{domain}" if subdomain else domain
+            output.append(f"Domain: {full_domain}")
+            output.append(f"  Status: {result.status}")
+            output.append(f"  Message: {result.message}")
+            output.append(f"  Response Time: {result.response_time:.3f}s")
+            if result.raw_data and args.verbose:
+                output.append("  Details:")
+                for key, value in result.raw_data.items():
+                    if key not in [
+                        "propagation_results"
+                    ]:  # Skip verbose propagation details
+                        output.append(f"    {key}: {value}")
+            output.append("")
+
+    combined_result = "\n".join(output)
+    return combined_result
+
+
+def handle_batch_command(args):
+    """Handle the batch check command."""
+    # Read check configurations from file
+    try:
+        with open(args.checks_file, "r") as f:
+            checks_data = json.load(f)
+    except Exception as e:
+        logger.error(f"Error reading checks file: {str(e)}")
+        return None
+
+    # Validate the checks data
+    if not isinstance(checks_data, list):
+        logger.error(
+            "Invalid checks file format. Expected a list of check configurations."
+        )
+        return None
+
+    # Prepare check configurations
+    check_configs = []
+    for i, check in enumerate(checks_data):
+        if "plugin_type" not in check:
+            logger.error(f"Missing plugin_type in check at index {i}")
+            continue
+        if "config" not in check:
+            logger.error(f"Missing config in check at index {i}")
+            continue
+
+        # Add ID if not present
+        if "id" not in check:
+            check["id"] = f"check{i+1}"
+
+        check_configs.append(check)
+
+    if not check_configs:
+        logger.error("No valid check configurations found")
+        return None
+
+    # Run checks in batches
+    max_workers = args.max_workers
+    batch_size = args.batch_size
+    timeout = args.timeout
+
+    from monitorpy.core.batch_runner import run_check_batch
+
+    results = run_check_batch(check_configs, batch_size, max_workers, timeout)
+
+    # Process results
+    processed_results = []
+    for check_config, result in results:
+        processed_results.append(
+            {
+                "id": check_config.get("id", "unknown"),
+                "plugin_type": check_config.get("plugin_type"),
+                "status": result.status,
+                "message": result.message,
+                "response_time": result.response_time,
+                "raw_data": result.raw_data if args.verbose else None,
+            }
+        )
+
+    # Calculate summary
+    total = len(processed_results)
+    success = sum(1 for r in processed_results if r["status"] == "success")
+    warning = sum(1 for r in processed_results if r["status"] == "warning")
+    error = sum(1 for r in processed_results if r["status"] == "error")
+
+    summary = {
+        "total": total,
+        "success": success,
+        "warning": warning,
+        "error": error,
+        "success_percentage": round(success / total * 100 if total > 0 else 0, 1),
+    }
+
+    # Output results
+    output_data = {"summary": summary, "results": processed_results}
 
     if args.json:
-        print(json.dumps(result.to_dict(), indent=2))
+        # JSON output
+        output = json.dumps(output_data, indent=2)
     else:
-        print(format_result(result, args.verbose))
+        # Text output
+        lines = []
+        lines.append(
+            f"\nBatch Check Results ({success}/{total} successful, {summary['success_percentage']}%):"
+        )
+        lines.append(f"  Success: {success}, Warning: {warning}, Error: {error}")
+        lines.append("")
 
-    return 0 if result.is_success() else (1 if result.is_warning() else 2)
+        if args.verbose:
+            for result in processed_results:
+                lines.append(f"Check: {result['id']} ({result['plugin_type']})")
+                lines.append(f"  Status: {result['status']}")
+                lines.append(f"  Message: {result['message']}")
+                lines.append(f"  Response Time: {result['response_time']:.3f}s")
+                if result["raw_data"]:
+                    lines.append("  Details:")
+                    for key, value in result["raw_data"].items():
+                        # Limit the output of complex nested structures
+                        if isinstance(value, (dict, list)) and not args.verbose:
+                            lines.append(f"    {key}: [complex data]")
+                        else:
+                            lines.append(f"    {key}: {value}")
+                lines.append("")
 
+        output = "\n".join(lines)
 
-def handle_config_command(args) -> int:
-    """
-    Handle the 'config' command for configuration management.
-
-    Args:
-        args: Command-line arguments
-
-    Returns:
-        int: Exit code (0 for success, non-zero for errors)
-    """
-    if args.action == "generate":
+    # Write to file if specified
+    if args.output:
         try:
-            save_sample_config(args.output, args.format)
-            print(f"Generated sample configuration file: {args.output}")
-            return 0
+            with open(args.output, "w") as f:
+                f.write(output)
+            logger.info(f"Results written to {args.output}")
+            return f"Results written to {args.output}"
         except Exception as e:
-            print(f"Error generating sample configuration: {str(e)}")
-            return 1
+            logger.error(f"Error writing results to file: {str(e)}")
 
-    return 1
+    return output
 
 
-def main() -> int:
-    """
-    Main entry point for the command-line interface.
-
-    Returns:
-        int: Exit code
-    """
+def main():
+    """Main entry point for the CLI."""
     parser = setup_cli_parser()
     args = parser.parse_args()
 
-    # Load configuration file if specified
+    # Set up logging
+    setup_logging(
+        level=args.log_level, log_file=args.log_file, use_color=sys.stdout.isatty()
+    )
+
+    # Load configuration if specified
     if args.config:
         load_config(args.config)
 
-    # Set up logging
-    log_level = getattr(logging, args.log_level)
-    setup_logging(level=log_level, log_file=args.log_file)
-
     # Handle commands
     if args.command == "list":
-        return handle_list_command()
+        print("Available plugins:")
+        for plugin in sorted(registry.get_plugin_names()):
+            print(f"  {plugin}")
+
+        return 0
+
     elif args.command == "config":
-        return handle_config_command(args)
+        if args.action == "generate":
+            save_sample_config(args.output, args.format)
+            print(f"Sample configuration file saved to {args.output}")
+
+        return 0
+
     elif args.command == "website":
-        return handle_website_command(args)
+        result = handle_website_command(args)
+
     elif args.command == "ssl":
-        return handle_ssl_command(args)
+        result = handle_ssl_command(args)
+
     elif args.command == "mail":
-        return handle_mail_command(args)
+        result = handle_mail_command(args)
+
     elif args.command == "dns":
-        return handle_dns_command(args)
+        result = handle_dns_command(args)
+
     elif args.command == "api":
-        return handle_api_command(args)
+        try:
+            from monitorpy.api import create_app, DevelopmentConfig, ProductionConfig
+            from monitorpy.api.extensions import db
+            from flask import Flask
+
+            # Set database URL if provided
+            if args.database:
+                os.environ["DATABASE_URL"] = args.database
+
+            # Set environment
+            os.environ["FLASK_ENV"] = "development" if args.debug else "production"
+
+            # Create and run application
+            config_class = DevelopmentConfig if args.debug else ProductionConfig
+            app = create_app(config_class)
+
+            print(f"Starting MonitorPy API on {args.host}:{args.port}...")
+            app.run(host=args.host, port=args.port, debug=args.debug)
+
+            return 0
+
+        except ImportError as e:
+            print(f"Error: {str(e)}")
+            print("Make sure the API dependencies are installed:")
+            print("  pip install flask flask-sqlalchemy flask-migrate flask-cors")
+            return 1
+        except Exception as e:
+            print(f"Error starting API: {str(e)}")
+            return 1
+
+    elif args.command == "batch":
+        result = handle_batch_command(args)
+        if result:
+            print(result)
+        return 0
+
     else:
         parser.print_help()
         return 1
+
+    # If we get here, we have a check result to print
+    if isinstance(result, str):
+        print(result)
+    elif args.json:
+        print(json.dumps(result.to_dict(), indent=2))
+    else:
+        print(
+            format_result(result, verbose=args.verbose, use_color=sys.stdout.isatty())
+        )
+
+    # Return exit code based on check status
+    if result.status == "success":
+        return 0
+    elif result.status == "warning":
+        return 1
+    else:
+        return 2
 
 
 if __name__ == "__main__":

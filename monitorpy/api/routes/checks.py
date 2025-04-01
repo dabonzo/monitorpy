@@ -10,6 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from monitorpy.api.extensions import db
 from monitorpy.api.models import Check, Result
 from monitorpy.core.registry import run_check as execute_check
+from monitorpy.core.batch_runner import run_checks_in_parallel, run_check_batch
 
 bp = Blueprint('checks', __name__)
 

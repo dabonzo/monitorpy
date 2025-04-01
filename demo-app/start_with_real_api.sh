@@ -61,7 +61,10 @@ sleep 3
 # Start the demo app HTTP server
 echo "Starting demo app on port $DEMO_APP_PORT..."
 cd $(dirname $0)
-python -m http.server $DEMO_APP_PORT &
+# Make sure we're in the demo-app directory
+echo "Serving demo app from $(pwd)"
+# Explicitly serve files from the current directory (demo-app)
+python -m http.server $DEMO_APP_PORT --directory $(pwd) &
 HTTP_PID=$!
 
 # Setup trap to kill both servers on exit

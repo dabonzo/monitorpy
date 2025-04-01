@@ -40,11 +40,13 @@ def create_app(config_class=Config):
     from monitorpy.api.routes.results import bp as results_bp
     from monitorpy.api.routes.plugins import bp as plugins_bp
     from monitorpy.api.routes.health import bp as health_bp
+    from monitorpy.api.routes.batch import bp as batch_bp
     
     app.register_blueprint(checks_bp, url_prefix='/api/v1/checks')
     app.register_blueprint(results_bp, url_prefix='/api/v1/results')
     app.register_blueprint(plugins_bp, url_prefix='/api/v1/plugins')
     app.register_blueprint(health_bp, url_prefix='/api/v1/health')
+    app.register_blueprint(batch_bp, url_prefix='/api/v1/batch')
     
     # Create database tables if needed
     with app.app_context():
@@ -65,7 +67,8 @@ def create_app(config_class=Config):
                 "/api/v1/health",
                 "/api/v1/plugins",
                 "/api/v1/checks",
-                "/api/v1/results"
+                "/api/v1/results",
+                "/api/v1/batch"
             ]
         }
     
