@@ -25,6 +25,8 @@ uvicorn>=0.21.0         # ASGI server
 pydantic>=1.10.7        # Data validation and settings management
 python-jose>=3.3.0      # JWT authentication
 python-multipart>=0.0.6 # Form data parsing
+redis>=4.5.1            # Redis client for caching and background tasks
+passlib>=1.7.4          # Password hashing library
 
 # Database drivers
 sqlalchemy>=1.4.0       # SQL toolkit and ORM

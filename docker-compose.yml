@@ -28,14 +28,29 @@ services:
       - SECRET_KEY=dev_secret_key_change_me_in_production
       - JWT_SECRET_KEY=dev_jwt_key_change_me_in_production
       - AUTH_REQUIRED=false
+      # Redis configuration
+      - REDIS_URL=redis://redis:6379/0
+      - USE_REDIS_CACHE=true
+      - CACHE_EXPIRATION=300  # Cache expiration in seconds
     volumes:
       - ./:/app
       - monitorpy_data:/data
     depends_on:
       - db
+      - redis
       # - mysql  # Uncomment when using MySQL
     networks:
       - monitorpy_network
+      
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - monitorpy_network
+    command: ["redis-server", "--appendonly", "yes"]
 
   # PostgreSQL service (enabled by default)
   # To use PostgreSQL, uncomment the PostgreSQL DATABASE_URL in the api service environment
@@ -87,3 +102,4 @@ volumes:
   postgres_data:
   # mysql_data:  # Uncomment when using MySQL
   monitorpy_data:
+  redis_data:

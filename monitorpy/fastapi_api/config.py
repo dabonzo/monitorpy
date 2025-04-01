@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     DEFAULT_PAGE_SIZE: int = 20
     MAX_PAGE_SIZE: int = 100
     
+    # Redis settings
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    USE_REDIS_CACHE: bool = os.getenv("USE_REDIS_CACHE", "true").lower() == "true"
+    CACHE_EXPIRATION: int = int(os.getenv("CACHE_EXPIRATION", "300"))  # 5 minutes default
+    
     class Config:
         """Pydantic config."""
         

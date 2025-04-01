@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Install additional dependencies for API
 RUN pip install --no-cache-dir fastapi uvicorn pydantic python-jose python-multipart \
-    sqlalchemy pyyaml
+    sqlalchemy pyyaml redis passlib
 
 # Create data directory
 RUN mkdir -p /data
