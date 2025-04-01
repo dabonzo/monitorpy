@@ -211,20 +211,37 @@ class SSLCertificatePlugin(MonitorPlugin):
             logger.exception(f"Timeout connecting to {hostname}:{port}")
             return CheckResult(
                 status=CheckResult.STATUS_ERROR,
-                message=f"Connection timed out after {timeout}s",
+                message=f"Connection timed out after {timeout}s when connecting to {hostname}:{port}",
                 response_time=timeout,
                 raw_data={
                     "error": "Connection timed out",
                     "error_type": "socket.timeout",
+                    "hostname": hostname,
+                    "port": port,
+                    "timeout": timeout
                 },
             )
         except socket.error as e:
             logger.exception(f"Socket error checking {hostname}:{port}")
+            
+            # More specific error message for common issues
+            if isinstance(e, ConnectionRefusedError):
+                message = f"Connection refused to {hostname}:{port}. Check if the host is reachable and the port is open."
+            elif isinstance(e, ConnectionResetError):
+                message = f"Connection reset by {hostname}:{port}. The server might not support SSL on this port."
+            else:
+                message = f"Connection error: {str(e)}"
+                
             return CheckResult(
                 status=CheckResult.STATUS_ERROR,
-                message=f"Connection error: {str(e)}",
+                message=message,
                 response_time=0.0,
-                raw_data={"error": str(e), "error_type": type(e).__name__},
+                raw_data={
+                    "error": str(e), 
+                    "error_type": type(e).__name__,
+                    "hostname": hostname,
+                    "port": port
+                },
             )
         except Exception as e:
             logger.exception(f"Unexpected error checking SSL for {hostname}:{port}")

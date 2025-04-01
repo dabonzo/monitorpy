@@ -137,6 +137,8 @@ monitorpy mail --servers mail-servers.txt --parallel --no-resolve-mx
 
 ### Parallel DNS Checks
 
+The DNS checks can run in parallel using the `--parallel` flag with a domains file:
+
 ```bash
 # Create a file with domains
 cat > domains.txt << EOF
@@ -147,11 +149,14 @@ stackoverflow.com
 EOF
 
 # Check all domains' A records in parallel
-monitorpy dns --domains domains.txt --parallel --type A
+# Note: Use --parallel-workers instead of --max-workers for parallel DNS checks
+monitorpy dns --domains domains.txt --parallel --parallel-workers 10 --type A
 
 # Check with DNS propagation
-monitorpy dns --domains domains.txt --parallel --check-propagation --threshold 90
+monitorpy dns --domains domains.txt --parallel --parallel-workers 8 --check-propagation --threshold 90
 ```
+
+Note: DNS checks use `--parallel-workers` instead of `--max-workers` to avoid confusion with the DNS-specific `--max-workers` parameter which is used for propagation checks within the DNS plugin.
 
 ## Python Code Examples
 

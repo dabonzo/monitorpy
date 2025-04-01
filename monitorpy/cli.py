@@ -12,7 +12,6 @@ import concurrent.futures
 
 from monitorpy.core import registry, run_check, run_checks_in_parallel
 from monitorpy.utils import setup_logging, format_result, get_logger
-from monitorpy.utils.formatting import ColorFormatter
 from monitorpy.config import load_config, save_sample_config, get_config
 
 # Import to register all plugins
@@ -63,16 +62,6 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         help="Log file path (if not specified, logs to stdout only)",
     )
     parser.add_argument("--config", help="Path to configuration file")
-    parser.add_argument(
-        "--parallel",
-        action="store_true",
-        help="Run multiple checks in parallel (when applicable)",
-    )
-    parser.add_argument(
-        "--max-workers",
-        type=int,
-        help="Maximum number of parallel workers (default: CPU count + 4)",
-    )
 
     # Create subparsers for different commands
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
@@ -152,7 +141,7 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         help="Check website availability",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    website_parser.add_argument("url", help="URL to check")
+    website_parser.add_argument("url", help="URL to check", nargs="?")
     website_parser.add_argument(
         "--timeout", type=int, default=30, help="Request timeout in seconds"
     )
@@ -194,6 +183,16 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         "--sites",
         help="File with list of URLs to check (one per line, will be checked in parallel with --parallel)",
     )
+    website_parser.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Run multiple checks in parallel (when using --sites)",
+    )
+    website_parser.add_argument(
+        "--max-workers",
+        type=int,
+        help="Maximum number of parallel workers (default: CPU count + 4)",
+    )
 
     # Check SSL certificate command
     ssl_parser = subparsers.add_parser(
@@ -201,7 +200,7 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         help="Check SSL certificate",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    ssl_parser.add_argument("hostname", help="Hostname or URL to check")
+    ssl_parser.add_argument("hostname", help="Hostname or URL to check", nargs="?")
     ssl_parser.add_argument("--port", type=int, help="Port number (default: 443)")
     ssl_parser.add_argument(
         "--timeout", type=int, default=30, help="Connection timeout in seconds"
@@ -230,6 +229,16 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         "--hosts",
         help="File with list of hostnames to check (one per line, will be checked in parallel with --parallel)",
     )
+    ssl_parser.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Run multiple checks in parallel (when using --hosts)",
+    )
+    ssl_parser.add_argument(
+        "--max-workers",
+        type=int,
+        help="Maximum number of parallel workers (default: CPU count + 4)",
+    )
 
     # Mail server check command
     mail_parser = subparsers.add_parser(
@@ -237,7 +246,7 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         help="Check mail server connectivity and functionality",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    mail_parser.add_argument("hostname", help="Mail server hostname")
+    mail_parser.add_argument("hostname", help="Mail server hostname", nargs="?")
     mail_parser.add_argument(
         "--protocol",
         choices=["smtp", "imap", "pop3"],
@@ -287,13 +296,23 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         "--servers",
         help="File with list of mail servers to check (one per line, will be checked in parallel with --parallel)",
     )
+    mail_parser.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Run multiple checks in parallel (when using --servers)",
+    )
+    mail_parser.add_argument(
+        "--max-workers",
+        type=int,
+        help="Maximum number of parallel workers (default: CPU count + 4)",
+    )
 
     dns_parser = subparsers.add_parser(
         "dns",
         help="Check DNS records and propagation",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    dns_parser.add_argument("domain", help="Domain name to check")
+    dns_parser.add_argument("domain", help="Domain name to check", nargs="?")
     dns_parser.add_argument(
         "--type",
         default="A",
@@ -348,16 +367,29 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         "--domains",
         help="File with list of domains to check (one per line, will be checked in parallel with --parallel)",
     )
+    dns_parser.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Run multiple checks in parallel (when using --domains)",
+    )
+    dns_parser.add_argument(
+        "--parallel-workers",
+        type=int,
+        help="Maximum number of parallel workers for domain checks (default: CPU count + 4)",
+    )
 
     return parser
 
 
 def handle_website_command(args):
     """Handle the website check command."""
-    # If urls file is provided and parallel flag is set, run multiple checks
-    if args.sites and args.parallel:
-        return handle_parallel_websites(args)
-
+    # Check if URL is provided when not using sites file
+    if not args.url and not args.sites:
+        logger.error("Either --url or --sites must be provided")
+        print(
+            "Error: Please provide either a URL to check or a sites file with --sites"
+        )
+        return None
     # Parse headers if provided
     headers = {}
     if args.header:
@@ -432,8 +464,8 @@ def handle_parallel_websites(args):
             {"id": f"url{i+1}", "plugin_type": "website_status", "config": config}
         )
 
-    # Run checks in parallel
-    max_workers = args.max_workers
+    # Run checks in parallel (use args.max_workers if specified, else None for default)
+    max_workers = args.max_workers if hasattr(args, "max_workers") else None
     results = run_checks_in_parallel(check_configs, max_workers)
 
     # Print summary
@@ -468,13 +500,17 @@ def handle_parallel_websites(args):
 
 def handle_ssl_command(args):
     """Handle the SSL certificate check command."""
-    # If hosts file is provided and parallel flag is set, run multiple checks
-    if args.hosts and args.parallel:
-        return handle_parallel_ssl(args)
+    # Check if hostname is provided when not using hosts file
+    if not args.hostname and not args.hosts:
+        logger.error("Either hostname or --hosts must be provided")
+        print(
+            "Error: Please provide either a hostname to check or a hosts file with --hosts"
+        )
+        return None
 
     config = {
         "hostname": args.hostname,
-        "port": args.port,
+        "port": args.port if args.port is not None else 443,  # Use default port 443 if not specified
         "timeout": args.timeout,
         "warning_days": args.warning,
         "critical_days": args.critical,
@@ -498,7 +534,7 @@ def handle_parallel_ssl(args):
 
     # Set up base configuration
     base_config = {
-        "port": args.port,
+        "port": args.port if args.port is not None else 443,  # Use default port 443 if not specified
         "timeout": args.timeout,
         "warning_days": args.warning,
         "critical_days": args.critical,
@@ -515,8 +551,8 @@ def handle_parallel_ssl(args):
             {"id": f"host{i+1}", "plugin_type": "ssl_certificate", "config": config}
         )
 
-    # Run checks in parallel
-    max_workers = args.max_workers
+    # Run checks in parallel (use args.max_workers if specified, else None for default)
+    max_workers = args.max_workers if hasattr(args, "max_workers") else None
     results = run_checks_in_parallel(check_configs, max_workers)
 
     # Print summary
@@ -559,9 +595,13 @@ def handle_parallel_ssl(args):
 
 def handle_mail_command(args):
     """Handle the mail server check command."""
-    # If servers file is provided and parallel flag is set, run multiple checks
-    if args.servers and args.parallel:
-        return handle_parallel_mail(args)
+    # Check if hostname is provided when not using servers file
+    if not args.hostname and not args.servers:
+        logger.error("Either hostname or --servers must be provided")
+        print(
+            "Error: Please provide either a mail server hostname to check or a servers file with --servers"
+        )
+        return None
 
     config = {
         "hostname": args.hostname,
@@ -616,8 +656,8 @@ def handle_parallel_mail(args):
             {"id": f"server{i+1}", "plugin_type": "mail_server", "config": config}
         )
 
-    # Run checks in parallel
-    max_workers = args.max_workers
+    # Run checks in parallel (use args.max_workers if specified, else None for default)
+    max_workers = args.max_workers if hasattr(args, "max_workers") else None
     results = run_checks_in_parallel(check_configs, max_workers)
 
     # Print summary
@@ -654,9 +694,13 @@ def handle_parallel_mail(args):
 
 def handle_dns_command(args):
     """Handle the DNS check command."""
-    # If domains file is provided and parallel flag is set, run multiple checks
-    if args.domains and args.parallel:
-        return handle_parallel_dns(args)
+    # Check if domain is provided when not using domains file
+    if not args.domain and not args.domains:
+        logger.error("Either domain or --domains must be provided")
+        print(
+            "Error: Please provide either a domain to check or a domains file with --domains"
+        )
+        return None
 
     # Combine domain and subdomain if both are provided
     full_domain = args.domain
@@ -671,14 +715,19 @@ def handle_dns_command(args):
         "nameserver": args.nameserver,
         "timeout": args.timeout,
         "check_propagation": args.check_propagation,
-        "resolvers": args.resolvers,
         "propagation_threshold": args.threshold,
         "check_authoritative": args.check_authoritative,
         "check_dnssec": args.check_dnssec,
         "max_workers": args.max_workers,
     }
+    
+    # Only include resolvers if specified, and ensure it's in the right format
+    if args.resolvers:
+        # args.resolvers will be a list of IP addresses as strings
+        config["resolvers"] = args.resolvers
 
-    result = run_check("dns", config)
+    # Use "dns_record" which is the actual plugin name
+    result = run_check("dns_record", config)
     return result
 
 
@@ -699,12 +748,17 @@ def handle_parallel_dns(args):
         "nameserver": args.nameserver,
         "timeout": args.timeout,
         "check_propagation": args.check_propagation,
-        "resolvers": args.resolvers,
         "propagation_threshold": args.threshold,
         "check_authoritative": args.check_authoritative,
         "check_dnssec": args.check_dnssec,
+        # Use the dns-specific max workers for propagation checks
         "max_workers": args.max_workers,
     }
+    
+    # Only include resolvers if specified, and ensure it's in the right format
+    if args.resolvers:
+        # args.resolvers will be a list of IP addresses as strings
+        base_config["resolvers"] = args.resolvers
 
     # Create check configurations for each domain
     check_configs = []
@@ -719,11 +773,12 @@ def handle_parallel_dns(args):
             config["domain"] = domain
 
         check_configs.append(
-            {"id": f"domain{i+1}", "plugin_type": "dns", "config": config}
+            {"id": f"domain{i+1}", "plugin_type": "dns_record", "config": config}
         )
 
-    # Run checks in parallel
-    max_workers = args.max_workers
+    # Use parallel-workers for running the parallel checks (this is different from
+    # the max_workers in the dns check config which is for propagation checks)
+    max_workers = args.parallel_workers if hasattr(args, "parallel_workers") else None
     results = run_checks_in_parallel(check_configs, max_workers)
 
     # Print summary
@@ -886,9 +941,7 @@ def main():
     args = parser.parse_args()
 
     # Set up logging
-    setup_logging(
-        level=args.log_level, log_file=args.log_file, use_color=sys.stdout.isatty()
-    )
+    setup_logging(level=args.log_level, log_file=args.log_file)
 
     # Load configuration if specified
     if args.config:
@@ -910,16 +963,61 @@ def main():
         return 0
 
     elif args.command == "website":
-        result = handle_website_command(args)
+        # Check if we're using a sites file
+        if args.sites:
+            if args.parallel:
+                result = handle_parallel_websites(args)
+            else:
+                # Sites file provided but no parallel flag
+                print(
+                    "Using sites file without --parallel flag. Consider adding --parallel for better performance."
+                )
+                result = handle_parallel_websites(args)
+        else:
+            # Regular single website check
+            result = handle_website_command(args)
 
     elif args.command == "ssl":
-        result = handle_ssl_command(args)
+        # Check if we're using a hosts file
+        if args.hosts:
+            if args.parallel:
+                result = handle_parallel_ssl(args)
+            else:
+                # Hosts file provided but no parallel flag
+                print(
+                    "Using hosts file without --parallel flag. Consider adding --parallel for better performance."
+                )
+                result = handle_parallel_ssl(args)
+        else:
+            result = handle_ssl_command(args)
 
     elif args.command == "mail":
-        result = handle_mail_command(args)
+        # Check if we're using a servers file
+        if args.servers:
+            if args.parallel:
+                result = handle_parallel_mail(args)
+            else:
+                # Servers file provided but no parallel flag
+                print(
+                    "Using servers file without --parallel flag. Consider adding --parallel for better performance."
+                )
+                result = handle_parallel_mail(args)
+        else:
+            result = handle_mail_command(args)
 
     elif args.command == "dns":
-        result = handle_dns_command(args)
+        # Check if we're using a domains file
+        if args.domains:
+            if args.parallel:
+                result = handle_parallel_dns(args)
+            else:
+                # Domains file provided but no parallel flag
+                print(
+                    "Using domains file without --parallel flag. Consider adding --parallel for better performance."
+                )
+                result = handle_parallel_dns(args)
+        else:
+            result = handle_dns_command(args)
 
     elif args.command == "api":
         try:
@@ -968,12 +1066,15 @@ def main():
     elif args.json:
         print(json.dumps(result.to_dict(), indent=2))
     else:
-        print(
-            format_result(result, verbose=args.verbose, use_color=sys.stdout.isatty())
-        )
+        print(format_result(result, verbose=args.verbose))
 
     # Return exit code based on check status
-    if result.status == "success":
+    if result is None:
+        return 1
+    elif isinstance(result, str):
+        # For parallel checks, we return 0 since we've already shown the summary
+        return 0
+    elif result.status == "success":
         return 0
     elif result.status == "warning":
         return 1

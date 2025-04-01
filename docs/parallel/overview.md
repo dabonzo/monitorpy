@@ -55,20 +55,31 @@ Where `checks.json` contains an array of check configurations:
 
 ### 2. Parallel Flag with List Files
 
-You can use the `--parallel` flag with any of the main check commands (`website`, `ssl`, `mail`, `dns`), combined with a file list:
+You can use the `--parallel` flag with any of the main check commands (`website`, `ssl`, `mail`, `dns`), combined with a file list. Each plugin has its own version of these arguments:
 
 ```bash
 # Check multiple websites in parallel
 monitorpy website --sites websites.txt --parallel --max-workers 10
 
 # Check multiple SSL certificates in parallel
-monitorpy ssl --hosts hostnames.txt --parallel --max-workers 10
+monitorpy ssl --hosts hostnames.txt --parallel --max-workers 10 
 
 # Check multiple mail servers in parallel
 monitorpy mail --servers mailservers.txt --parallel --max-workers 10
 
 # Check multiple domains' DNS records in parallel
-monitorpy dns --domains domains.txt --parallel --max-workers 10
+# Note: For DNS, use --parallel-workers instead of --max-workers
+monitorpy dns --domains domains.txt --parallel --parallel-workers 10
+```
+
+Note: For DNS checks, use `--parallel-workers` to specify the number of workers for running parallel domain checks. This is different from `--max-workers` which is used for propagation checks within the DNS plugin.
+
+When using a file with multiple targets, the URL/hostname/domain is optional. For example:
+
+```bash
+# These are equivalent:
+monitorpy website --sites websites.txt --parallel
+monitorpy website example.com --sites websites.txt --parallel
 ```
 
 Each file should contain one item per line:
