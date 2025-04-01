@@ -6,21 +6,21 @@ This module provides configuration classes for the Flask application.
 
 import os
 from datetime import timedelta
+from monitorpy.config import get_config, get_database_url
 
 
 class Config:
     """Base configuration class."""
     
     # Flask settings
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-please-change-in-production'
+    SECRET_KEY = os.environ.get('SECRET_KEY') or get_config('api', 'secret_key')
     
     # Database settings
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(os.path.expanduser('~'), '.monitorpy', 'monitorpy.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or get_database_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # API settings
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-dev-key-please-change'
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or get_config('api', 'jwt_secret_key')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     API_TITLE = 'MonitorPy API'
     API_VERSION = 'v1'
@@ -31,10 +31,10 @@ class Config:
     MAX_PAGE_SIZE = 100
     
     # Result storage
-    RESULT_RETENTION_DAYS = 30
+    RESULT_RETENTION_DAYS = get_config('api', 'result_retention_days', 30)
     
     # Authentication (disabled by default for development)
-    AUTH_REQUIRED = os.environ.get('AUTH_REQUIRED', 'False').lower() == 'true'
+    AUTH_REQUIRED = os.environ.get('AUTH_REQUIRED', str(get_config('api', 'auth_required', False))).lower() == 'true'
 
 
 class DevelopmentConfig(Config):

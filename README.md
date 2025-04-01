@@ -38,6 +38,27 @@ pip install -e .
 pip install monitorpy
 ```
 
+## Configuration
+
+MonitorPy supports flexible configuration through a central configuration file. You can generate a sample configuration file:
+
+```bash
+# Generate a sample configuration
+monitorpy config generate --output monitorpy.yml
+
+# Use the configuration file
+monitorpy --config monitorpy.yml [command]
+```
+
+The configuration file supports:
+
+- General settings (logging, data storage)
+- API configuration (host, port, security)
+- Database settings (SQLite, PostgreSQL, MySQL)
+- Plugin-specific default values
+
+Environment variables can override configuration values for deployment in different environments.
+
 ## Quick Start
 
 After installation, you can use the `monitorpy` command to access the monitoring functions:

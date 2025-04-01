@@ -12,6 +12,7 @@ from typing import Optional
 from monitorpy.core import registry, run_check
 from monitorpy.utils import setup_logging, format_result, get_logger
 from monitorpy.utils.formatting import ColorFormatter
+from monitorpy.config import load_config, save_sample_config, get_config
 
 # Import to register all plugins
 from monitorpy import plugins  # noqa: F401
@@ -52,11 +53,17 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        default="INFO",
+        default=get_config("general", "log_level", "INFO"),
         help="Set logging level",
     )
     parser.add_argument(
-        "--log-file", help="Log file path (if not specified, logs to stdout only)"
+        "--log-file", 
+        default=get_config("general", "log_file"),
+        help="Log file path (if not specified, logs to stdout only)"
+    )
+    parser.add_argument(
+        "--config",
+        help="Path to configuration file"
     )
 
     # Create subparsers for different commands
@@ -67,6 +74,29 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         "list",
         help="List available plugins",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    
+    # Config command
+    config_parser = subparsers.add_parser(
+        "config",
+        help="Configuration management",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    config_parser.add_argument(
+        "action",
+        choices=["generate"],
+        help="Action to perform"
+    )
+    config_parser.add_argument(
+        "--output",
+        default="./monitorpy.yml",
+        help="Output file path for generated config"
+    )
+    config_parser.add_argument(
+        "--format",
+        choices=["yaml", "json"],
+        default="yaml",
+        help="Output format"
     )
     
     # API server command
@@ -499,18 +529,23 @@ def handle_api_command(args) -> int:
         # Set development mode
         os.environ['FLASK_ENV'] = 'development' if args.debug else 'production'
         
-        print(f"Starting MonitorPy API server on {args.host}:{args.port}...")
+        # Get host and port from config if not specified in args
+        host = args.host or get_config('api', 'host', '0.0.0.0')
+        port = args.port or get_config('api', 'port', 5000)
+        debug = args.debug or get_config('api', 'debug', False)
+        
+        print(f"Starting MonitorPy API server on {host}:{port}...")
         print("Press Ctrl+C to stop the server")
         
         # Import API app
         from monitorpy.api import create_app
-        from monitorpy.api.config import get_config
+        from monitorpy.api.config import get_config as get_api_config
         
         # Create the Flask app
-        app = create_app(get_config())
+        app = create_app(get_api_config())
         
         # Run the Flask app
-        app.run(host=args.host, port=args.port, debug=args.debug)
+        app.run(host=host, port=port, debug=debug)
         
         return 0
     
@@ -586,6 +621,28 @@ def handle_dns_command(args) -> int:
     return 0 if result.is_success() else (1 if result.is_warning() else 2)
 
 
+def handle_config_command(args) -> int:
+    """
+    Handle the 'config' command for configuration management.
+
+    Args:
+        args: Command-line arguments
+
+    Returns:
+        int: Exit code (0 for success, non-zero for errors)
+    """
+    if args.action == "generate":
+        try:
+            save_sample_config(args.output, args.format)
+            print(f"Generated sample configuration file: {args.output}")
+            return 0
+        except Exception as e:
+            print(f"Error generating sample configuration: {str(e)}")
+            return 1
+    
+    return 1
+
+
 def main() -> int:
     """
     Main entry point for the command-line interface.
@@ -596,6 +653,10 @@ def main() -> int:
     parser = setup_cli_parser()
     args = parser.parse_args()
 
+    # Load configuration file if specified
+    if args.config:
+        load_config(args.config)
+    
     # Set up logging
     log_level = getattr(logging, args.log_level)
     setup_logging(level=log_level, log_file=args.log_file)
@@ -603,6 +664,8 @@ def main() -> int:
     # Handle commands
     if args.command == "list":
         return handle_list_command()
+    elif args.command == "config":
+        return handle_config_command(args)
     elif args.command == "website":
         return handle_website_command(args)
     elif args.command == "ssl":

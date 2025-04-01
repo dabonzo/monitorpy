@@ -51,7 +51,8 @@ def create_app(config_class=Config):
         if app.config['SQLALCHEMY_DATABASE_URI'].startswith('sqlite:'):
             # SQLite database - create directory if needed
             db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
-            os.makedirs(os.path.dirname(db_path), exist_ok=True)
+            if db_path:  # Skip for in-memory database
+                os.makedirs(os.path.dirname(db_path), exist_ok=True)
         
         db.create_all()
     

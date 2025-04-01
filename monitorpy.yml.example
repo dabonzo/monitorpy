@@ -1,0 +1,70 @@
+####################################
+#  MonitorPy Configuration File  #
+####################################
+
+# General settings
+general:
+  # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  log_level: INFO
+  
+  # Optional log file path (if not set, logs to console)
+  log_file: null
+  
+  # Directory for data storage
+  data_dir: ~/.monitorpy
+
+# API configuration
+api:
+  # Server binding address and port
+  host: 0.0.0.0
+  port: 5000
+  
+  # Debug mode (enables hot reloading and more verbose errors)
+  debug: false
+  
+  # Secret keys for security (CHANGE THESE IN PRODUCTION!)
+  secret_key: change-me-in-production
+  jwt_secret_key: change-me-in-production
+  
+  # Enable authentication requirement
+  auth_required: false
+  
+  # Number of days to retain monitoring results
+  result_retention_days: 30
+
+# Database configuration
+database:
+  # Database type: sqlite, postgresql, mysql
+  type: sqlite
+  
+  # SQLite settings
+  path: ~/.monitorpy/monitorpy.db
+  
+  # PostgreSQL/MySQL settings (only needed if type is postgresql or mysql)
+  host: localhost
+  port: null  # Uses default port if null (PostgreSQL: 5432, MySQL: 3306)
+  name: monitorpy
+  user: monitorpy
+  password: null
+  ssl: false
+
+# Plugin default settings
+plugins:
+  # Website monitoring defaults
+  website:
+    default_timeout: 30
+    user_agent: MonitorPy/1.0
+  
+  # SSL certificate monitoring defaults
+  ssl:
+    default_timeout: 30
+    warning_days: 30  # Warning when cert expires in less than this many days
+    critical_days: 14  # Critical when cert expires in less than this many days
+  
+  # Mail server monitoring defaults
+  mail:
+    default_timeout: 30
+  
+  # DNS monitoring defaults
+  dns:
+    default_timeout: 30
