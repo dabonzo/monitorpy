@@ -17,8 +17,8 @@ from monitorpy.plugins.dns_plugin import DNSRecordPlugin  # Add this line
 # Add new plugin imports here as they're developed
 
 __all__ = [
-    'WebsiteStatusPlugin',
-    'SSLCertificatePlugin',
-    'MailServerPlugin',
-    'DNSRecordPlugin',
+    "WebsiteStatusPlugin",
+    "SSLCertificatePlugin",
+    "MailServerPlugin",
+    "DNSRecordPlugin",
 ]

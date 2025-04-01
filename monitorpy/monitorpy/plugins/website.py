@@ -1,6 +1,7 @@
 """
 Website monitoring plugin for checking website availability and content.
 """
+
 import time
 from typing import List
 
@@ -52,7 +53,7 @@ class WebsiteStatusPlugin(MonitorPlugin):
             "verify_ssl",
             "follow_redirects",
             "expected_content",
-            "unexpected_content"
+            "unexpected_content",
         ]
 
     def validate_config(self) -> bool:
@@ -64,13 +65,17 @@ class WebsiteStatusPlugin(MonitorPlugin):
         """
         # Check that all required keys are present
         if not all(key in self.config for key in self.get_required_config()):
-            logger.error(f"Missing required configuration parameters: {self.get_required_config()}")
+            logger.error(
+                f"Missing required configuration parameters: {self.get_required_config()}"
+            )
             return False
 
         # Validate URL format
         url = self.config.get("url", "")
         if not url.startswith(("http://", "https://")):
-            logger.error(f"Invalid URL format: {url}. Must start with http:// or https://")
+            logger.error(
+                f"Invalid URL format: {url}. Must start with http:// or https://"
+            )
             return False
 
         return True
@@ -99,7 +104,9 @@ class WebsiteStatusPlugin(MonitorPlugin):
             auth = (self.config["auth_username"], self.config["auth_password"])
 
         try:
-            logger.debug(f"Checking website {url} (method: {method}, timeout: {timeout}s)")
+            logger.debug(
+                f"Checking website {url} (method: {method}, timeout: {timeout}s)"
+            )
             start_time = time.time()
 
             response = requests.request(
@@ -110,12 +117,14 @@ class WebsiteStatusPlugin(MonitorPlugin):
                 auth=auth,
                 timeout=timeout,
                 verify=verify_ssl,
-                allow_redirects=follow_redirects
+                allow_redirects=follow_redirects,
             )
 
             end_time = time.time()
             response_time = end_time - start_time
-            logger.debug(f"Request completed in {response_time:.4f}s with status {response.status_code}")
+            logger.debug(
+                f"Request completed in {response_time:.4f}s with status {response.status_code}"
+            )
 
             # Check status code
             status_match = response.status_code == expected_status
@@ -126,18 +135,28 @@ class WebsiteStatusPlugin(MonitorPlugin):
 
             if expected_content and expected_content not in response.text:
                 content_match = False
-                content_issues.append(f"Expected content '{expected_content}' not found")
-                logger.debug(f"Expected content '{expected_content}' not found in response")
+                content_issues.append(
+                    f"Expected content '{expected_content}' not found"
+                )
+                logger.debug(
+                    f"Expected content '{expected_content}' not found in response"
+                )
 
             if unexpected_content and unexpected_content in response.text:
                 content_match = False
-                content_issues.append(f"Unexpected content '{unexpected_content}' found")
-                logger.debug(f"Unexpected content '{unexpected_content}' found in response")
+                content_issues.append(
+                    f"Unexpected content '{unexpected_content}' found"
+                )
+                logger.debug(
+                    f"Unexpected content '{unexpected_content}' found in response"
+                )
 
             # Determine overall status
             if status_match and content_match:
                 status = CheckResult.STATUS_SUCCESS
-                message = f"Website check successful. Status code: {response.status_code}"
+                message = (
+                    f"Website check successful. Status code: {response.status_code}"
+                )
             elif status_match:
                 status = CheckResult.STATUS_WARNING
                 message = f"Website accessible but content issues detected: {', '.join(content_issues)}"
@@ -155,7 +174,9 @@ class WebsiteStatusPlugin(MonitorPlugin):
                 "content_issues": content_issues,
                 "response_headers": dict(response.headers),
                 "response_size": len(response.content),
-                "redirect_history": [h.url for h in response.history] if follow_redirects else None
+                "redirect_history": (
+                    [h.url for h in response.history] if follow_redirects else None
+                ),
             }
 
             logger.info(f"Website check result: {status} - {message}")
@@ -163,7 +184,7 @@ class WebsiteStatusPlugin(MonitorPlugin):
                 status=status,
                 message=message,
                 response_time=response_time,
-                raw_data=raw_data
+                raw_data=raw_data,
             )
 
         except RequestException as e:
@@ -172,7 +193,7 @@ class WebsiteStatusPlugin(MonitorPlugin):
                 status=CheckResult.STATUS_ERROR,
                 message=f"Connection error: {str(e)}",
                 response_time=0.0,
-                raw_data={"error": str(e), "error_type": type(e).__name__}
+                raw_data={"error": str(e), "error_type": type(e).__name__},
             )
         except Exception as e:
             logger.exception(f"Unexpected error checking website {url}")
@@ -180,5 +201,5 @@ class WebsiteStatusPlugin(MonitorPlugin):
                 status=CheckResult.STATUS_ERROR,
                 message=f"Unexpected error: {str(e)}",
                 response_time=0.0,
-                raw_data={"error": str(e), "error_type": type(e).__name__}
+                raw_data={"error": str(e), "error_type": type(e).__name__},
             )

@@ -3,6 +3,7 @@ Base plugin system for monitoring plugins.
 
 This module defines the abstract base class for monitoring plugins.
 """
+
 import abc
 from typing import Dict, Any, List
 

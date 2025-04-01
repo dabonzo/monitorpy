@@ -1,6 +1,7 @@
 """
 Command-line interface for the monitorpy package.
 """
+
 import argparse
 import json
 import sys
@@ -10,6 +11,7 @@ from typing import Optional
 from monitorpy.core import registry, run_check
 from monitorpy.utils import setup_logging, format_result, get_logger
 from monitorpy.utils.formatting import ColorFormatter
+
 # Import to register all plugins
 from monitorpy import plugins  # noqa: F401
 
@@ -26,10 +28,10 @@ def parse_header(header_str: str) -> Optional[tuple]:
     Returns:
         Optional[tuple]: Tuple of (name, value) or None if invalid
     """
-    if not header_str or ':' not in header_str:
+    if not header_str or ":" not in header_str:
         return None
 
-    name, value = header_str.split(':', 1)
+    name, value = header_str.split(":", 1)
     return name.strip(), value.strip()
 
 
@@ -42,7 +44,7 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         description="MonitorPy - A plugin-based website and service monitoring tool",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     # Global options
@@ -50,11 +52,10 @@ def setup_cli_parser() -> argparse.ArgumentParser:
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="INFO",
-        help="Set logging level"
+        help="Set logging level",
     )
     parser.add_argument(
-        "--log-file",
-        help="Log file path (if not specified, logs to stdout only)"
+        "--log-file", help="Log file path (if not specified, logs to stdout only)"
     )
 
     # Create subparsers for different commands
@@ -64,112 +65,193 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     subparsers.add_parser(
         "list",
         help="List available plugins",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
     # Check website command
     website_parser = subparsers.add_parser(
         "website",
         help="Check website availability",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     website_parser.add_argument("url", help="URL to check")
     website_parser.add_argument(
-        "--timeout",
-        type=int,
-        default=30,
-        help="Request timeout in seconds"
+        "--timeout", type=int, default=30, help="Request timeout in seconds"
     )
     website_parser.add_argument(
-        "--status",
-        type=int,
-        default=200,
-        help="Expected HTTP status code"
+        "--status", type=int, default=200, help="Expected HTTP status code"
     )
-    website_parser.add_argument("--method", default="GET", help="HTTP method (GET, POST, etc.)")
-    website_parser.add_argument("--header", action="append", help="HTTP header in format 'Name: Value'")
+    website_parser.add_argument(
+        "--method", default="GET", help="HTTP method (GET, POST, etc.)"
+    )
+    website_parser.add_argument(
+        "--header", action="append", help="HTTP header in format 'Name: Value'"
+    )
     website_parser.add_argument("--body", help="Request body data")
-    website_parser.add_argument("--content", help="Content that should be present in the response")
-    website_parser.add_argument("--no-content", help="Content that should NOT be present in the response")
-    website_parser.add_argument("--auth-username", help="Username for basic authentication")
-    website_parser.add_argument("--auth-password", help="Password for basic authentication")
-    website_parser.add_argument("--no-verify", action="store_true", help="Disable SSL certificate verification")
-    website_parser.add_argument("--no-redirect", action="store_true", help="Disable following redirects")
-    website_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
-    website_parser.add_argument("--json", action="store_true", help="Output results as JSON")
+    website_parser.add_argument(
+        "--content", help="Content that should be present in the response"
+    )
+    website_parser.add_argument(
+        "--no-content", help="Content that should NOT be present in the response"
+    )
+    website_parser.add_argument(
+        "--auth-username", help="Username for basic authentication"
+    )
+    website_parser.add_argument(
+        "--auth-password", help="Password for basic authentication"
+    )
+    website_parser.add_argument(
+        "--no-verify", action="store_true", help="Disable SSL certificate verification"
+    )
+    website_parser.add_argument(
+        "--no-redirect", action="store_true", help="Disable following redirects"
+    )
+    website_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Show detailed output"
+    )
+    website_parser.add_argument(
+        "--json", action="store_true", help="Output results as JSON"
+    )
 
     # Check SSL certificate command
     ssl_parser = subparsers.add_parser(
         "ssl",
         help="Check SSL certificate",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     ssl_parser.add_argument("hostname", help="Hostname or URL to check")
     ssl_parser.add_argument("--port", type=int, help="Port number (default: 443)")
-    ssl_parser.add_argument("--timeout", type=int, default=30, help="Connection timeout in seconds")
-    ssl_parser.add_argument("--warning", type=int, default=30, help="Warning threshold in days")
-    ssl_parser.add_argument("--critical", type=int, default=14, help="Critical threshold in days")
-    ssl_parser.add_argument("--check-chain", action="store_true", help="Check certificate chain")
-    ssl_parser.add_argument("--no-verify-hostname", action="store_true", help="Disable hostname verification")
-    ssl_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
-    ssl_parser.add_argument("--json", action="store_true", help="Output results as JSON")
+    ssl_parser.add_argument(
+        "--timeout", type=int, default=30, help="Connection timeout in seconds"
+    )
+    ssl_parser.add_argument(
+        "--warning", type=int, default=30, help="Warning threshold in days"
+    )
+    ssl_parser.add_argument(
+        "--critical", type=int, default=14, help="Critical threshold in days"
+    )
+    ssl_parser.add_argument(
+        "--check-chain", action="store_true", help="Check certificate chain"
+    )
+    ssl_parser.add_argument(
+        "--no-verify-hostname",
+        action="store_true",
+        help="Disable hostname verification",
+    )
+    ssl_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Show detailed output"
+    )
+    ssl_parser.add_argument(
+        "--json", action="store_true", help="Output results as JSON"
+    )
 
     # Mail server check command
     mail_parser = subparsers.add_parser(
         "mail",
         help="Check mail server connectivity and functionality",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     mail_parser.add_argument("hostname", help="Mail server hostname")
     mail_parser.add_argument(
         "--protocol",
         choices=["smtp", "imap", "pop3"],
         default="smtp",
-        help="Mail protocol to check"
+        help="Mail protocol to check",
     )
-    mail_parser.add_argument("--port", type=int, help="Server port (defaults to standard port for protocol)")
+    mail_parser.add_argument(
+        "--port", type=int, help="Server port (defaults to standard port for protocol)"
+    )
     mail_parser.add_argument("--username", help="Username for authentication")
     mail_parser.add_argument("--password", help="Password for authentication")
     mail_parser.add_argument("--ssl", action="store_true", help="Use SSL connection")
-    mail_parser.add_argument("--tls", action="store_true", help="Use TLS connection (SMTP only)")
-    mail_parser.add_argument("--timeout", type=int, default=30, help="Connection timeout in seconds")
-    mail_parser.add_argument("--send-test", action="store_true", help="Send test email (SMTP only)")
-    mail_parser.add_argument("--from", dest="from_email", help="From email address (for test email)")
-    mail_parser.add_argument("--to", dest="to_email", help="To email address (for test email)")
-    mail_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
-    mail_parser.add_argument("--json", action="store_true", help="Output results as JSON")
-    mail_parser.add_argument("--basic-check", action="store_true",
-                             help="Perform basic connectivity check without authentication")
-    mail_parser.add_argument("--resolve-mx", action="store_true",
-                             help="Resolve MX records for domain and check the highest priority server")
+    mail_parser.add_argument(
+        "--tls", action="store_true", help="Use TLS connection (SMTP only)"
+    )
+    mail_parser.add_argument(
+        "--timeout", type=int, default=30, help="Connection timeout in seconds"
+    )
+    mail_parser.add_argument(
+        "--send-test", action="store_true", help="Send test email (SMTP only)"
+    )
+    mail_parser.add_argument(
+        "--from", dest="from_email", help="From email address (for test email)"
+    )
+    mail_parser.add_argument(
+        "--to", dest="to_email", help="To email address (for test email)"
+    )
+    mail_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Show detailed output"
+    )
+    mail_parser.add_argument(
+        "--json", action="store_true", help="Output results as JSON"
+    )
+    mail_parser.add_argument(
+        "--basic-check",
+        action="store_true",
+        help="Perform basic connectivity check without authentication",
+    )
+    mail_parser.add_argument(
+        "--resolve-mx",
+        action="store_true",
+        help="Resolve MX records for domain and check the highest priority server",
+    )
 
     dns_parser = subparsers.add_parser(
         "dns",
         help="Check DNS records and propagation",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     dns_parser.add_argument("domain", help="Domain name to check")
-    dns_parser.add_argument("--type", default="A", dest="record_type",
-                            help="DNS record type (A, AAAA, MX, CNAME, TXT, NS, etc.)")
-    dns_parser.add_argument("--value", dest="expected_value",
-                            help="Expected record value")
+    dns_parser.add_argument(
+        "--type",
+        default="A",
+        dest="record_type",
+        help="DNS record type (A, AAAA, MX, CNAME, TXT, NS, etc.)",
+    )
+    dns_parser.add_argument(
+        "--value", dest="expected_value", help="Expected record value"
+    )
     dns_parser.add_argument("--subdomain", help="Subdomain to check (e.g., 'www')")
     dns_parser.add_argument("--nameserver", help="Specific nameserver to query")
-    dns_parser.add_argument("--timeout", type=int, default=10, help="Query timeout in seconds")
-    dns_parser.add_argument("--check-propagation", action="store_true",
-                            help="Check DNS propagation across multiple resolvers")
-    dns_parser.add_argument("--resolvers", nargs="+",
-                            help="Custom DNS resolvers to check (space-separated list of IP addresses)")
-    dns_parser.add_argument("--threshold", type=float, default=80,
-                            help="Propagation threshold percentage (0-100)")
-    dns_parser.add_argument("--check-authoritative", action="store_true",
-                            help="Check if response is from an authoritative server")
-    dns_parser.add_argument("--check-dnssec", action="store_true",
-                            help="Check DNSSEC validation")
-    dns_parser.add_argument("--max-workers", type=int, default=10,
-                            help="Maximum number of concurrent workers for propagation checks")
-    dns_parser.add_argument("-v", "--verbose", action="store_true", help="Show detailed output")
-    dns_parser.add_argument("--json", action="store_true", help="Output results as JSON")
+    dns_parser.add_argument(
+        "--timeout", type=int, default=10, help="Query timeout in seconds"
+    )
+    dns_parser.add_argument(
+        "--check-propagation",
+        action="store_true",
+        help="Check DNS propagation across multiple resolvers",
+    )
+    dns_parser.add_argument(
+        "--resolvers",
+        nargs="+",
+        help="Custom DNS resolvers to check (space-separated list of IP addresses)",
+    )
+    dns_parser.add_argument(
+        "--threshold",
+        type=float,
+        default=80,
+        help="Propagation threshold percentage (0-100)",
+    )
+    dns_parser.add_argument(
+        "--check-authoritative",
+        action="store_true",
+        help="Check if response is from an authoritative server",
+    )
+    dns_parser.add_argument(
+        "--check-dnssec", action="store_true", help="Check DNSSEC validation"
+    )
+    dns_parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=10,
+        help="Maximum number of concurrent workers for propagation checks",
+    )
+    dns_parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Show detailed output"
+    )
+    dns_parser.add_argument(
+        "--json", action="store_true", help="Output results as JSON"
+    )
 
     return parser
 
@@ -207,7 +289,7 @@ def handle_website_command(args) -> int:
         "expected_status": args.status,
         "method": args.method,
         "verify_ssl": not args.no_verify,
-        "follow_redirects": not args.no_redirect
+        "follow_redirects": not args.no_redirect,
     }
 
     # Parse headers if provided
@@ -263,7 +345,7 @@ def handle_ssl_command(args) -> int:
         "warning_days": args.warning,
         "critical_days": args.critical,
         "check_chain": args.check_chain,
-        "verify_hostname": not args.no_verify_hostname
+        "verify_hostname": not args.no_verify_hostname,
     }
 
     if args.port:
@@ -292,7 +374,7 @@ def handle_mail_command(args) -> int:
     config = {
         "hostname": args.hostname,
         "protocol": args.protocol,
-        "timeout": args.timeout
+        "timeout": args.timeout,
     }
 
     # Add SSL/TLS configuration
@@ -321,7 +403,9 @@ def handle_mail_command(args) -> int:
     # Determine if we're doing a basic check or authenticated check
     if args.basic_check:
         # Basic check - don't include credentials
-        logger.info(f"Performing basic {args.protocol.upper()} server check for {args.hostname}")
+        logger.info(
+            f"Performing basic {args.protocol.upper()} server check for {args.hostname}"
+        )
     else:
         # Include authentication if provided
         if args.username:
@@ -331,14 +415,23 @@ def handle_mail_command(args) -> int:
             config["password"] = args.password
 
         # Only include test email settings if doing SMTP with creds
-        if args.protocol == "smtp" and args.send_test and args.username and args.password:
+        if (
+            args.protocol == "smtp"
+            and args.send_test
+            and args.username
+            and args.password
+        ):
             config["test_send"] = True
 
             if args.from_email:
                 config["from_email"] = args.from_email
             else:
                 # Default from email if not provided
-                config["from_email"] = args.username if "@" in args.username else f"{args.username}@example.com"
+                config["from_email"] = (
+                    args.username
+                    if "@" in args.username
+                    else f"{args.username}@example.com"
+                )
 
             if args.to_email:
                 config["to_email"] = args.to_email
@@ -352,7 +445,9 @@ def handle_mail_command(args) -> int:
                 "to verify mail server functionality."
             )
 
-            logger.info(f"Will send test email from {config['from_email']} to {config['to_email']}")
+            logger.info(
+                f"Will send test email from {config['from_email']} to {config['to_email']}"
+            )
 
     # Run the appropriate check
     result = run_check("mail_server", config)
@@ -387,7 +482,7 @@ def handle_dns_command(args) -> int:
     config = {
         "domain": args.domain,
         "record_type": args.record_type,
-        "timeout": args.timeout
+        "timeout": args.timeout,
     }
 
     # Add optional configuration

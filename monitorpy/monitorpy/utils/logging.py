@@ -1,6 +1,7 @@
 """
 Logging utilities for the monitorpy package.
 """
+
 import logging
 import sys
 from typing import Optional
@@ -21,8 +22,8 @@ def setup_logging(level: int = logging.INFO, log_file: Optional[str] = None):
 
     logging.basicConfig(
         level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=handlers
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=handlers,
     )
 
     # Set requests logging level to WARNING to reduce noise

@@ -1,6 +1,7 @@
 """
 SSL certificate monitoring plugin for checking certificate validity and expiration.
 """
+
 import time
 import socket
 import ssl
@@ -47,7 +48,7 @@ class SSLCertificatePlugin(MonitorPlugin):
             "warning_days",
             "critical_days",
             "check_chain",
-            "verify_hostname"
+            "verify_hostname",
         ]
 
     def validate_config(self) -> bool:
@@ -59,7 +60,9 @@ class SSLCertificatePlugin(MonitorPlugin):
         """
         # Check that all required keys are present
         if not all(key in self.config for key in self.get_required_config()):
-            logger.error(f"Missing required configuration parameters: {self.get_required_config()}")
+            logger.error(
+                f"Missing required configuration parameters: {self.get_required_config()}"
+            )
             return False
 
         # Extract hostname from URL if a full URL was provided
@@ -67,7 +70,9 @@ class SSLCertificatePlugin(MonitorPlugin):
         if hostname.startswith(("http://", "https://")):
             parsed_url = urllib.parse.urlparse(hostname)
             if not parsed_url.netloc:
-                logger.error(f"Invalid URL format: {hostname}. Could not extract hostname.")
+                logger.error(
+                    f"Invalid URL format: {hostname}. Could not extract hostname."
+                )
                 return False
 
         return True
@@ -111,7 +116,9 @@ class SSLCertificatePlugin(MonitorPlugin):
         verify_hostname = self.config.get("verify_hostname", True)
 
         try:
-            logger.debug(f"Checking SSL certificate for {hostname}:{port} (timeout: {timeout}s)")
+            logger.debug(
+                f"Checking SSL certificate for {hostname}:{port} (timeout: {timeout}s)"
+            )
             start_time = time.time()
 
             # Create socket and get certificate
@@ -154,7 +161,9 @@ class SSLCertificatePlugin(MonitorPlugin):
                     message = f"Certificate expired on {expiration.isoformat()}"
             elif days_until_expiration <= critical_days:
                 status = CheckResult.STATUS_ERROR
-                message = f"Certificate expires very soon - {days_until_expiration} days left"
+                message = (
+                    f"Certificate expires very soon - {days_until_expiration} days left"
+                )
             elif days_until_expiration <= warning_days:
                 status = CheckResult.STATUS_WARNING
                 message = f"Certificate expiration approaching - {days_until_expiration} days left"
@@ -187,7 +196,7 @@ class SSLCertificatePlugin(MonitorPlugin):
                 status=status,
                 message=message,
                 response_time=response_time,
-                raw_data=raw_data
+                raw_data=raw_data,
             )
 
         except ssl.SSLError as e:
@@ -196,7 +205,7 @@ class SSLCertificatePlugin(MonitorPlugin):
                 status=CheckResult.STATUS_ERROR,
                 message=f"SSL error: {str(e)}",
                 response_time=0.0,
-                raw_data={"error": str(e), "error_type": type(e).__name__}
+                raw_data={"error": str(e), "error_type": type(e).__name__},
             )
         except socket.timeout:
             logger.exception(f"Timeout connecting to {hostname}:{port}")
@@ -204,7 +213,10 @@ class SSLCertificatePlugin(MonitorPlugin):
                 status=CheckResult.STATUS_ERROR,
                 message=f"Connection timed out after {timeout}s",
                 response_time=timeout,
-                raw_data={"error": "Connection timed out", "error_type": "socket.timeout"}
+                raw_data={
+                    "error": "Connection timed out",
+                    "error_type": "socket.timeout",
+                },
             )
         except socket.error as e:
             logger.exception(f"Socket error checking {hostname}:{port}")
@@ -212,7 +224,7 @@ class SSLCertificatePlugin(MonitorPlugin):
                 status=CheckResult.STATUS_ERROR,
                 message=f"Connection error: {str(e)}",
                 response_time=0.0,
-                raw_data={"error": str(e), "error_type": type(e).__name__}
+                raw_data={"error": str(e), "error_type": type(e).__name__},
             )
         except Exception as e:
             logger.exception(f"Unexpected error checking SSL for {hostname}:{port}")
@@ -220,5 +232,5 @@ class SSLCertificatePlugin(MonitorPlugin):
                 status=CheckResult.STATUS_ERROR,
                 message=f"Unexpected error: {str(e)}",
                 response_time=0.0,
-                raw_data={"error": str(e), "error_type": type(e).__name__}
+                raw_data={"error": str(e), "error_type": type(e).__name__},
             )

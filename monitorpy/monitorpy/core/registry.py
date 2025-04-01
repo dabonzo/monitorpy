@@ -1,6 +1,7 @@
 """
 Plugin registry module for managing monitoring plugins.
 """
+
 import logging
 from typing import Dict, Any, Type, Callable
 
@@ -76,7 +77,7 @@ class PluginRegistry:
             result[name] = {
                 "description": plugin_class.get_description(),
                 "required_config": plugin_class.get_required_config(),
-                "optional_config": plugin_class.get_optional_config()
+                "optional_config": plugin_class.get_optional_config(),
             }
         return result
 
@@ -109,9 +110,11 @@ def register_plugin(name: str) -> Callable:
     Returns:
         The decorated class
     """
+
     def decorator(cls):
         registry.register(name, cls)
         return cls
+
     return decorator
 
 
@@ -134,7 +137,7 @@ def run_check(plugin_name: str, config: Dict[str, Any]) -> CheckResult:
                 CheckResult.STATUS_ERROR,
                 f"Invalid configuration for plugin {plugin_name}",
                 0.0,
-                {"config": config}
+                {"config": config},
             )
 
         return plugin.run_check()
@@ -144,5 +147,5 @@ def run_check(plugin_name: str, config: Dict[str, Any]) -> CheckResult:
             CheckResult.STATUS_ERROR,
             f"Exception running check: {str(e)}",
             0.0,
-            {"error": str(e), "error_type": type(e).__name__}
+            {"error": str(e), "error_type": type(e).__name__},
         )

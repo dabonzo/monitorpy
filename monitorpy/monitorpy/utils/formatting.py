@@ -1,6 +1,7 @@
 """
 Output formatting utilities for the monitorpy package.
 """
+
 import json
 from typing import Any
 import datetime
@@ -61,7 +62,7 @@ def format_result(result: CheckResult, verbose: bool = False) -> str:
     status_formatters = {
         CheckResult.STATUS_SUCCESS: ColorFormatter.success,
         CheckResult.STATUS_WARNING: ColorFormatter.warning,
-        CheckResult.STATUS_ERROR: ColorFormatter.error
+        CheckResult.STATUS_ERROR: ColorFormatter.error,
     }
 
     formatter = status_formatters.get(result.status, str)
@@ -69,7 +70,7 @@ def format_result(result: CheckResult, verbose: bool = False) -> str:
 
     output = [
         f"{status_str}: {result.message}",
-        f"Response time: {result.response_time:.4f} seconds"
+        f"Response time: {result.response_time:.4f} seconds",
     ]
 
     if verbose:

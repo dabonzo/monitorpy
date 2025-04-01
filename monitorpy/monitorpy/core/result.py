@@ -1,6 +1,7 @@
 """
 Result module for storing and processing check results.
 """
+
 from datetime import datetime
 from typing import Dict, Any, Optional
 
@@ -27,7 +28,7 @@ class CheckResult:
         status: str,
         message: str,
         response_time: float = 0.0,
-        raw_data: Optional[Dict[str, Any]] = None
+        raw_data: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize a new check result.
@@ -42,7 +43,9 @@ class CheckResult:
             ValueError: If the status is not one of the valid values
         """
         if status not in self.VALID_STATUSES:
-            raise ValueError(f"Invalid status: {status}. Must be one of: {', '.join(self.VALID_STATUSES)}")
+            raise ValueError(
+                f"Invalid status: {status}. Must be one of: {', '.join(self.VALID_STATUSES)}"
+            )
 
         self.status = status
         self.message = message
@@ -62,7 +65,7 @@ class CheckResult:
             "message": self.message,
             "response_time": self.response_time,
             "raw_data": self.raw_data,
-            "timestamp": self.timestamp.isoformat()
+            "timestamp": self.timestamp.isoformat(),
         }
 
     def __str__(self) -> str:

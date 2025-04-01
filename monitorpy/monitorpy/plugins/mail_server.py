@@ -1,6 +1,7 @@
 """
 Mail server monitoring plugin for checking SMTP, IMAP, and POP3 functionality.
 """
+
 import time
 import socket
 import smtplib
@@ -58,7 +59,7 @@ class MailServerPlugin(MonitorPlugin):
             "test_send",
             "subject",
             "message",
-            "resolve_mx"
+            "resolve_mx",
         ]
 
     def validate_config(self) -> bool:
@@ -70,20 +71,26 @@ class MailServerPlugin(MonitorPlugin):
         """
         # Check that all required keys are present
         if not all(key in self.config for key in self.get_required_config()):
-            logger.error(f"Missing required configuration parameters: {self.get_required_config()}")
+            logger.error(
+                f"Missing required configuration parameters: {self.get_required_config()}"
+            )
             return False
 
         # Validate protocol
         protocol = self.config.get("protocol", "").lower()
         valid_protocols = ["smtp", "imap", "pop3"]
         if protocol not in valid_protocols:
-            logger.error(f"Invalid protocol: {protocol}. Must be one of: {', '.join(valid_protocols)}")
+            logger.error(
+                f"Invalid protocol: {protocol}. Must be one of: {', '.join(valid_protocols)}"
+            )
             return False
 
         # If test_send is enabled, validate email addresses
         if self.config.get("test_send", False):
             if "from_email" not in self.config or "to_email" not in self.config:
-                logger.error("When test_send is enabled, from_email and to_email are required")
+                logger.error(
+                    "When test_send is enabled, from_email and to_email are required"
+                )
                 return False
 
         # If username is provided, password should also be provided
@@ -123,9 +130,7 @@ class MailServerPlugin(MonitorPlugin):
             else:
                 # This shouldn't happen due to validation, but just in case
                 return CheckResult(
-                    CheckResult.STATUS_ERROR,
-                    f"Unsupported protocol: {protocol}",
-                    0.0
+                    CheckResult.STATUS_ERROR, f"Unsupported protocol: {protocol}", 0.0
                 )
 
             end_time = time.time()
@@ -139,8 +144,8 @@ class MailServerPlugin(MonitorPlugin):
             return CheckResult(
                 CheckResult.STATUS_ERROR,
                 f"Unexpected error: {str(e)}",
-                time.time() - start_time if 'start_time' in locals() else 0.0,
-                {"error": str(e), "error_type": type(e).__name__}
+                time.time() - start_time if "start_time" in locals() else 0.0,
+                {"error": str(e), "error_type": type(e).__name__},
             )
 
     def _check_server_basic(self) -> CheckResult:
@@ -171,16 +176,24 @@ class MailServerPlugin(MonitorPlugin):
             "port": port,
             "protocol": protocol,
             "use_ssl": use_ssl,
-            "mx_records": None
+            "mx_records": None,
         }
 
         try:
             # Check for MX records if requested
-            if self.config.get("resolve_mx", False) and "." in hostname and not hostname[0].isdigit():
+            if (
+                self.config.get("resolve_mx", False)
+                and "." in hostname
+                and not hostname[0].isdigit()
+            ):
                 try:
                     import dns.resolver
-                    mx_records = dns.resolver.resolve(hostname, 'MX')
-                    mx_list = [(rec.preference, str(rec.exchange).rstrip('.')) for rec in mx_records]
+
+                    mx_records = dns.resolver.resolve(hostname, "MX")
+                    mx_list = [
+                        (rec.preference, str(rec.exchange).rstrip("."))
+                        for rec in mx_records
+                    ]
                     mx_list.sort()  # Sort by preference
 
                     raw_data["mx_records"] = [mx[1] for mx in mx_list]
@@ -191,7 +204,9 @@ class MailServerPlugin(MonitorPlugin):
                         raw_data["hostname_used"] = hostname
                         logger.info(f"Using highest priority MX record: {hostname}")
                 except ImportError:
-                    logger.warning("dnspython library not installed. Cannot resolve MX records.")
+                    logger.warning(
+                        "dnspython library not installed. Cannot resolve MX records."
+                    )
                     raw_data["mx_error"] = "dnspython library not installed"
                 except Exception as e:
                     logger.warning(f"Could not resolve MX records for {hostname}: {e}")
@@ -206,20 +221,27 @@ class MailServerPlugin(MonitorPlugin):
                     server = smtplib.SMTP(hostname, port, timeout=timeout)
 
                 # Get initial connection info
-                if hasattr(server, 'sock') and server.sock:
+                if hasattr(server, "sock") and server.sock:
                     raw_data["local_address"] = server.sock.getsockname()[0]
                     raw_data["remote_address"] = server.sock.getpeername()[0]
 
                 # Check if server accepts EHLO
-                ehlo_code, ehlo_message = server.ehlo('monitorpy.local')
+                ehlo_code, ehlo_message = server.ehlo("monitorpy.local")
                 raw_data["ehlo_code"] = ehlo_code
-                raw_data["ehlo_message"] = ehlo_message.decode('utf-8') if isinstance(ehlo_message, bytes) else str(ehlo_message)
+                raw_data["ehlo_message"] = (
+                    ehlo_message.decode("utf-8")
+                    if isinstance(ehlo_message, bytes)
+                    else str(ehlo_message)
+                )
 
                 # Check supported features
-                raw_data["supports_tls"] = server.has_extn('STARTTLS')
-                raw_data["extensions"] = {k.decode('utf-8') if isinstance(k, bytes) else k:
-                                         v.decode('utf-8') if isinstance(v, bytes) else v
-                                         for k, v in server.esmtp_features.items()}
+                raw_data["supports_tls"] = server.has_extn("STARTTLS")
+                raw_data["extensions"] = {
+                    k.decode("utf-8") if isinstance(k, bytes) else k: (
+                        v.decode("utf-8") if isinstance(v, bytes) else v
+                    )
+                    for k, v in server.esmtp_features.items()
+                }
 
                 server.quit()
 
@@ -236,7 +258,7 @@ class MailServerPlugin(MonitorPlugin):
                     CheckResult.STATUS_SUCCESS,
                     message,
                     0.0,  # Will be updated in run_check
-                    raw_data
+                    raw_data,
                 )
 
             # IMAP basic check
@@ -249,7 +271,11 @@ class MailServerPlugin(MonitorPlugin):
 
                 # Get capabilities
                 typ, capabilities_data = server.capability()
-                capabilities_str = capabilities_data[0].decode('utf-8') if isinstance(capabilities_data[0], bytes) else str(capabilities_data[0])
+                capabilities_str = (
+                    capabilities_data[0].decode("utf-8")
+                    if isinstance(capabilities_data[0], bytes)
+                    else str(capabilities_data[0])
+                )
                 raw_data["capabilities"] = capabilities_str
                 capabilities_list = capabilities_str.split()
 
@@ -263,15 +289,23 @@ class MailServerPlugin(MonitorPlugin):
 
                 if capabilities_list:
                     # Show a few important capabilities
-                    important_caps = [cap for cap in capabilities_list if any(x in cap for x in ["AUTH=", "STARTTLS", "IDLE", "UIDPLUS"])]
+                    important_caps = [
+                        cap
+                        for cap in capabilities_list
+                        if any(
+                            x in cap for x in ["AUTH=", "STARTTLS", "IDLE", "UIDPLUS"]
+                        )
+                    ]
                     if important_caps:
-                        message += f". Notable capabilities: {', '.join(important_caps)}"
+                        message += (
+                            f". Notable capabilities: {', '.join(important_caps)}"
+                        )
 
                 return CheckResult(
                     CheckResult.STATUS_SUCCESS,
                     message,
                     0.0,  # Will be updated in run_check
-                    raw_data
+                    raw_data,
                 )
 
             # POP3 basic check
@@ -289,8 +323,13 @@ class MailServerPlugin(MonitorPlugin):
                 # Get capabilities if available
                 try:
                     capabilities_resp = server.capa()
-                    if capabilities_resp[0].startswith(b"+OK") or capabilities_resp[0].startswith("+OK"):
-                        capabilities_list = [cap.decode('utf-8') if isinstance(cap, bytes) else str(cap) for cap in capabilities_resp[1]]
+                    if capabilities_resp[0].startswith(b"+OK") or capabilities_resp[
+                        0
+                    ].startswith("+OK"):
+                        capabilities_list = [
+                            cap.decode("utf-8") if isinstance(cap, bytes) else str(cap)
+                            for cap in capabilities_resp[1]
+                        ]
                         raw_data["capabilities"] = capabilities_list
                 except Exception as e:
                     raw_data["capabilities_error"] = str(e)
@@ -305,19 +344,24 @@ class MailServerPlugin(MonitorPlugin):
                     message = f"POP3 server {hostname}:{port} is operational"
 
                 if welcome:
-                    welcome_str = welcome if isinstance(welcome, str) else welcome.decode('utf-8')
+                    welcome_str = (
+                        welcome if isinstance(welcome, str) else welcome.decode("utf-8")
+                    )
                     if len(welcome_str) > 50:
                         welcome_str = welcome_str[:47] + "..."
                     message += f". Welcome: {welcome_str}"
 
-                if raw_data.get("capabilities") and raw_data["capabilities"] != "Not supported or error":
+                if (
+                    raw_data.get("capabilities")
+                    and raw_data["capabilities"] != "Not supported or error"
+                ):
                     message += ". Capabilities available."
 
                 return CheckResult(
                     CheckResult.STATUS_SUCCESS,
                     message,
                     0.0,  # Will be updated in run_check
-                    raw_data
+                    raw_data,
                 )
 
             else:
@@ -325,7 +369,7 @@ class MailServerPlugin(MonitorPlugin):
                     CheckResult.STATUS_ERROR,
                     f"Unsupported protocol: {protocol}",
                     0.0,
-                    raw_data
+                    raw_data,
                 )
 
         except (socket.gaierror, socket.timeout) as e:
@@ -336,12 +380,7 @@ class MailServerPlugin(MonitorPlugin):
                 message += f" {hostname}:{port}"
             message += f": {str(e)}"
 
-            return CheckResult(
-                CheckResult.STATUS_ERROR,
-                message,
-                0.0,
-                raw_data
-            )
+            return CheckResult(CheckResult.STATUS_ERROR, message, 0.0, raw_data)
         except Exception as e:
             message = f"Unexpected error checking {protocol.upper()} server"
             if raw_data.get("hostname_used"):
@@ -350,12 +389,7 @@ class MailServerPlugin(MonitorPlugin):
                 message += f" {hostname}:{port}"
             message += f": {str(e)}"
 
-            return CheckResult(
-                CheckResult.STATUS_ERROR,
-                message,
-                0.0,
-                raw_data
-            )
+            return CheckResult(CheckResult.STATUS_ERROR, message, 0.0, raw_data)
 
     def _check_smtp(self) -> CheckResult:
         """
@@ -381,7 +415,7 @@ class MailServerPlugin(MonitorPlugin):
             "use_tls": use_tls,
             "authenticated": False,
             "test_send": test_send,
-            "test_send_success": False
+            "test_send_success": False,
         }
 
         try:
@@ -410,7 +444,9 @@ class MailServerPlugin(MonitorPlugin):
                 from_email = self.config["from_email"]
                 to_email = self.config["to_email"]
                 subject = self.config.get("subject", "MonitorPy Mail Server Test")
-                message_text = self.config.get("message", "This is a test email from MonitorPy.")
+                message_text = self.config.get(
+                    "message", "This is a test email from MonitorPy."
+                )
 
                 msg = EmailMessage()
                 msg.set_content(message_text)
@@ -430,13 +466,15 @@ class MailServerPlugin(MonitorPlugin):
             elif username and password:
                 message = f"SMTP server check successful, authenticated as {username}"
             else:
-                message = f"SMTP server check successful, connected to {hostname}:{port}"
+                message = (
+                    f"SMTP server check successful, connected to {hostname}:{port}"
+                )
 
             return CheckResult(
                 CheckResult.STATUS_SUCCESS,
                 message,
                 0.0,  # Will be updated in run_check
-                raw_data
+                raw_data,
             )
 
         except smtplib.SMTPAuthenticationError:
@@ -444,28 +482,19 @@ class MailServerPlugin(MonitorPlugin):
                 CheckResult.STATUS_ERROR,
                 f"SMTP authentication failed for user {username}",
                 0.0,
-                raw_data
+                raw_data,
             )
         except smtplib.SMTPException as e:
             return CheckResult(
-                CheckResult.STATUS_ERROR,
-                f"SMTP error: {str(e)}",
-                0.0,
-                raw_data
+                CheckResult.STATUS_ERROR, f"SMTP error: {str(e)}", 0.0, raw_data
             )
         except (socket.gaierror, socket.timeout) as e:
             return CheckResult(
-                CheckResult.STATUS_ERROR,
-                f"Connection error: {str(e)}",
-                0.0,
-                raw_data
+                CheckResult.STATUS_ERROR, f"Connection error: {str(e)}", 0.0, raw_data
             )
         except Exception as e:
             return CheckResult(
-                CheckResult.STATUS_ERROR,
-                f"Unexpected error: {str(e)}",
-                0.0,
-                raw_data
+                CheckResult.STATUS_ERROR, f"Unexpected error: {str(e)}", 0.0, raw_data
             )
 
     def _check_imap(self) -> CheckResult:
@@ -487,7 +516,7 @@ class MailServerPlugin(MonitorPlugin):
             "port": port,
             "protocol": "imap",
             "use_ssl": use_ssl,
-            "authenticated": False
+            "authenticated": False,
         }
 
         try:
@@ -505,10 +534,12 @@ class MailServerPlugin(MonitorPlugin):
                 raw_data["authenticated"] = True
 
                 # Check mailbox status
-                status, mailbox_data = server.select('INBOX', readonly=True)
-                if status == 'OK':
+                status, mailbox_data = server.select("INBOX", readonly=True)
+                if status == "OK":
                     raw_data["mailbox_status"] = "OK"
-                    raw_data["mailbox_message_count"] = int(mailbox_data[0].decode('utf-8'))
+                    raw_data["mailbox_message_count"] = int(
+                        mailbox_data[0].decode("utf-8")
+                    )
                 else:
                     raw_data["mailbox_status"] = "ERROR"
 
@@ -519,37 +550,32 @@ class MailServerPlugin(MonitorPlugin):
             if username and password:
                 message = f"IMAP server check successful, authenticated as {username}"
                 if raw_data.get("mailbox_status") == "OK":
-                    message += f", INBOX contains {raw_data['mailbox_message_count']} messages"
+                    message += (
+                        f", INBOX contains {raw_data['mailbox_message_count']} messages"
+                    )
             else:
-                message = f"IMAP server check successful, connected to {hostname}:{port}"
+                message = (
+                    f"IMAP server check successful, connected to {hostname}:{port}"
+                )
 
             return CheckResult(
                 CheckResult.STATUS_SUCCESS,
                 message,
                 0.0,  # Will be updated in run_check
-                raw_data
+                raw_data,
             )
 
         except imaplib.IMAP4.error as e:
             return CheckResult(
-                CheckResult.STATUS_ERROR,
-                f"IMAP error: {str(e)}",
-                0.0,
-                raw_data
+                CheckResult.STATUS_ERROR, f"IMAP error: {str(e)}", 0.0, raw_data
             )
         except (socket.gaierror, socket.timeout) as e:
             return CheckResult(
-                CheckResult.STATUS_ERROR,
-                f"Connection error: {str(e)}",
-                0.0,
-                raw_data
+                CheckResult.STATUS_ERROR, f"Connection error: {str(e)}", 0.0, raw_data
             )
         except Exception as e:
             return CheckResult(
-                CheckResult.STATUS_ERROR,
-                f"Unexpected error: {str(e)}",
-                0.0,
-                raw_data
+                CheckResult.STATUS_ERROR, f"Unexpected error: {str(e)}", 0.0, raw_data
             )
 
     def _check_pop3(self) -> CheckResult:
@@ -571,7 +597,7 @@ class MailServerPlugin(MonitorPlugin):
             "port": port,
             "protocol": "pop3",
             "use_ssl": use_ssl,
-            "authenticated": False
+            "authenticated": False,
         }
 
         try:
@@ -605,13 +631,15 @@ class MailServerPlugin(MonitorPlugin):
             if username and password:
                 message = f"POP3 server check successful, authenticated as {username}, {raw_data['message_count']} messages in mailbox"
             else:
-                message = f"POP3 server check successful, connected to {hostname}:{port}"
+                message = (
+                    f"POP3 server check successful, connected to {hostname}:{port}"
+                )
 
             return CheckResult(
                 CheckResult.STATUS_SUCCESS,
                 message,
                 0.0,  # Will be updated in run_check
-                raw_data
+                raw_data,
             )
 
         except poplib.error_proto as e:
@@ -619,19 +647,13 @@ class MailServerPlugin(MonitorPlugin):
                 CheckResult.STATUS_ERROR,
                 f"POP3 protocol error: {str(e)}",
                 0.0,
-                raw_data
+                raw_data,
             )
         except (socket.gaierror, socket.timeout) as e:
             return CheckResult(
-                CheckResult.STATUS_ERROR,
-                f"Connection error: {str(e)}",
-                0.0,
-                raw_data
+                CheckResult.STATUS_ERROR, f"Connection error: {str(e)}", 0.0, raw_data
             )
         except Exception as e:
             return CheckResult(
-                CheckResult.STATUS_ERROR,
-                f"Unexpected error: {str(e)}",
-                0.0,
-                raw_data
+                CheckResult.STATUS_ERROR, f"Unexpected error: {str(e)}", 0.0, raw_data
             )
