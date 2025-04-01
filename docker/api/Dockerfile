@@ -7,14 +7,14 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install additional dependencies for API
-RUN pip install --no-cache-dir flask flask-sqlalchemy flask-migrate flask-jwt-extended \
-    flask-marshmallow marshmallow-sqlalchemy flask-cors gunicorn pyyaml
+RUN pip install --no-cache-dir fastapi uvicorn pydantic python-jose python-multipart \
+    sqlalchemy pyyaml
 
 # Create data directory
 RUN mkdir -p /data
 
 # Expose port
-EXPOSE 5000
+EXPOSE 8000
 
 # Set environment variables
 ENV PYTHONPATH=/app
@@ -23,4 +23,4 @@ ENV PYTHONPATH=/app
 COPY . .
 
 # Command to run the application
-CMD ["python", "-m", "monitorpy.api.run"]
+CMD ["python", "run_fastapi.py"]

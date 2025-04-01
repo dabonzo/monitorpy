@@ -98,8 +98,8 @@ def setup_cli_parser() -> argparse.ArgumentParser:
     api_parser.add_argument(
         "--host", type=str, default="0.0.0.0", help="Host to bind to"
     )
-    api_parser.add_argument("--port", type=int, default=5000, help="Port to bind to")
-    api_parser.add_argument("--debug", action="store_true", help="Run in debug mode")
+    api_parser.add_argument("--port", type=int, default=8000, help="Port to bind to")
+    api_parser.add_argument("--reload", dest="debug", action="store_true", help="Enable auto-reload for development")
     api_parser.add_argument(
         "--database", type=str, help="Database URL (defaults to SQLite)"
     )
@@ -1053,30 +1053,22 @@ def main():
 
     elif args.command == "api":
         try:
-            from monitorpy.api import create_app, DevelopmentConfig, ProductionConfig
-            from monitorpy.api.extensions import db
-            from flask import Flask
+            from monitorpy.fastapi_api.run import run_api
 
             # Set database URL if provided
             if args.database:
                 os.environ["DATABASE_URL"] = args.database
 
-            # Set environment
-            os.environ["FLASK_ENV"] = "development" if args.debug else "production"
-
-            # Create and run application
-            config_class = DevelopmentConfig if args.debug else ProductionConfig
-            app = create_app(config_class)
-
-            print(f"Starting MonitorPy API on {args.host}:{args.port}...")
-            app.run(host=args.host, port=args.port, debug=args.debug)
+            # Run the FastAPI application
+            print(f"Starting MonitorPy FastAPI on {args.host}:{args.port}...")
+            run_api(host=args.host, port=args.port, reload=args.debug)
 
             return 0
 
         except ImportError as e:
             print(f"Error: {str(e)}")
             print("Make sure the API dependencies are installed:")
-            print("  pip install flask flask-sqlalchemy flask-migrate flask-cors")
+            print("  pip install fastapi uvicorn pydantic python-jose python-multipart")
             return 1
         except Exception as e:
             print(f"Error starting API: {str(e)}")
@@ -1084,47 +1076,44 @@ def main():
             
     elif args.command == "user":
         try:
-            from monitorpy.api import create_app
-            from monitorpy.api.extensions import db
-            from monitorpy.api.models.user import User
-            from monitorpy.api.config import get_config
+            from monitorpy.fastapi_api.database import SessionLocal
+            from monitorpy.fastapi_api.models.user import User
 
-            # Create app context for database operations
-            app = create_app(get_config())
+            # Create database session
+            db = SessionLocal()
             
-            with app.app_context():
+            try:
                 # Handle user management commands
                 if args.user_action == "create":
                     # Check if user already exists
-                    if User.query.filter_by(username=args.username).first():
+                    if db.query(User).filter(User.username == args.username).first():
                         print(f"Error: Username {args.username} already exists")
                         return 1
                     
-                    if User.query.filter_by(email=args.email).first():
+                    if db.query(User).filter(User.email == args.email).first():
                         print(f"Error: Email {args.email} already exists")
                         return 1
                         
                     # Create new user
-                    user = User(
-                        username=args.username, 
-                        email=args.email, 
-                        password=args.password, 
-                        is_admin=args.admin
-                    )
+                    user = User()
+                    user.username = args.username
+                    user.email = args.email
+                    user.set_password(args.password)
+                    user.is_admin = args.admin
                     
                     # Generate API key
                     api_key = user.generate_api_key()
                     
                     # Save to database
-                    db.session.add(user)
-                    db.session.commit()
+                    db.add(user)
+                    db.commit()
                     
                     is_admin_str = "with admin privileges" if args.admin else "without admin privileges"
                     print(f"User {args.username} ({args.email}) created successfully {is_admin_str}")
                     print(f"API Key: {api_key}")
                     
                 elif args.user_action == "list":
-                    users = User.query.all()
+                    users = db.query(User).all()
                     
                     if not users:
                         print("No users found")
@@ -1138,38 +1127,38 @@ def main():
                             print(f"  API Key: {user.api_key}")
                             
                 elif args.user_action == "delete":
-                    user = User.query.filter_by(username=args.username).first()
+                    user = db.query(User).filter(User.username == args.username).first()
                     
                     if not user:
                         print(f"Error: User {args.username} not found")
                         return 1
                         
-                    db.session.delete(user)
-                    db.session.commit()
+                    db.delete(user)
+                    db.commit()
                     
                     print(f"User {args.username} deleted successfully")
                     
                 elif args.user_action == "reset-password":
-                    user = User.query.filter_by(username=args.username).first()
+                    user = db.query(User).filter(User.username == args.username).first()
                     
                     if not user:
                         print(f"Error: User {args.username} not found")
                         return 1
                         
                     user.set_password(args.password)
-                    db.session.commit()
+                    db.commit()
                     
                     print(f"Password for user {args.username} reset successfully")
                     
                 elif args.user_action == "generate-key":
-                    user = User.query.filter_by(username=args.username).first()
+                    user = db.query(User).filter(User.username == args.username).first()
                     
                     if not user:
                         print(f"Error: User {args.username} not found")
                         return 1
                         
                     api_key = user.generate_api_key()
-                    db.session.commit()
+                    db.commit()
                     
                     print(f"New API key for user {args.username} generated successfully")
                     print(f"API Key: {api_key}")
@@ -1178,12 +1167,16 @@ def main():
                     print("Error: Unknown user action")
                     return 1
                     
+            finally:
+                # Close the database session
+                db.close()
+                
             return 0
             
         except ImportError as e:
             print(f"Error: {str(e)}")
             print("Make sure the API dependencies are installed:")
-            print("  pip install flask flask-sqlalchemy flask-migrate flask-cors")
+            print("  pip install fastapi sqlalchemy pydantic")
             return 1
         except Exception as e:
             print(f"Error in user management: {str(e)}")

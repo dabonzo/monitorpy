@@ -17,9 +17,8 @@ services:
       context: .
       dockerfile: docker/api/Dockerfile
     ports:
-      - "5000:5000"
+      - "8000:8000"
     environment:
-      - FLASK_ENV=development
       # Default: SQLite database
       - DATABASE_URL=sqlite:////data/monitorpy.db
       # PostgreSQL (uncomment to use):

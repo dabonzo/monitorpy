@@ -2,34 +2,43 @@
 """
 Standalone script to run the MonitorPy API for the demo application.
 
-This script provides a more direct way to start the API without relying
-on module imports that might be affected by the project structure.
+This script provides a simple FastAPI implementation for demo purposes.
 """
 
 import sys
 import os
 import argparse
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-
-# Make a simpler mock API since we're having module path issues
-# This will provide the basic API endpoints for the demo
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Run the MonitorPy API server")
     parser.add_argument("--host", default="0.0.0.0", help="Host to bind to")
-    parser.add_argument("--port", type=int, default=5000, help="Port to bind to")
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+    parser.add_argument("--port", type=int, default=8000, help="Port to bind to")
+    parser.add_argument("--reload", action="store_true", help="Enable auto-reload")
     return parser.parse_args()
 
 def main():
     """Run the API server."""
     args = parse_args()
     
-    # Create a simple Flask app for the demo
-    app = Flask("monitorpy-demo-api")
-    CORS(app)
+    # Create a simple FastAPI app for the demo
+    app = FastAPI(
+        title="MonitorPy API",
+        description="Demo API for MonitorPy",
+        version="1.0.0",
+    )
+    
+    # Add CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     
     # Sample data for the demo
     plugins = [
@@ -57,24 +66,24 @@ def main():
     results = []
     
     # API routes
-    @app.route('/api/v1/health')
-    def health():
-        return jsonify({
+    @app.get("/api/v1/health")
+    async def health():
+        return {
             "status": "healthy",
             "database": "connected",
             "version": "1.0.0"
-        })
+        }
     
-    @app.route('/api/v1/plugins')
-    def get_plugins():
-        return jsonify({
+    @app.get("/api/v1/plugins")
+    async def get_plugins():
+        return {
             "plugins": plugins,
             "count": len(plugins)
-        })
+        }
     
-    @app.route('/api/v1/checks')
-    def get_checks():
-        return jsonify({
+    @app.get("/api/v1/checks")
+    async def get_checks():
+        return {
             "checks": checks,
             "pagination": {
                 "page": 1,
@@ -82,16 +91,16 @@ def main():
                 "total": len(checks),
                 "pages": 1
             }
-        })
+        }
     
-    @app.route('/api/v1/checks', methods=['POST'])
-    def create_check():
+    @app.post("/api/v1/checks", status_code=201)
+    async def create_check(check: dict):
         # Mock creating a check
         new_check = {
             "id": f"check_{len(checks) + 1}",
-            "name": request.json.get('name', 'New Check'),
-            "plugin_type": request.json.get('plugin_type', 'unknown'),
-            "config": request.json.get('config', {}),
+            "name": check.get('name', 'New Check'),
+            "plugin_type": check.get('plugin_type', 'unknown'),
+            "config": check.get('config', {}),
             "enabled": True,
             "schedule": None,
             "last_run": None,
@@ -99,20 +108,23 @@ def main():
             "updated_at": "2025-04-01T00:00:00Z"
         }
         checks.append(new_check)
-        return jsonify(new_check), 201
+        return new_check
     
-    @app.route('/api/v1/checks/<check_id>', methods=['DELETE'])
-    def delete_check(check_id):
-        global checks
+    @app.delete("/api/v1/checks/{check_id}", status_code=204)
+    async def delete_check(check_id: str):
+        nonlocal checks
+        original_length = len(checks)
         checks = [c for c in checks if c["id"] != check_id]
-        return "", 204
+        if len(checks) == original_length:
+            raise HTTPException(status_code=404, detail="Check not found")
+        return None
     
-    @app.route('/api/v1/checks/<check_id>/run', methods=['POST'])
-    def run_check(check_id):
+    @app.post("/api/v1/checks/{check_id}/run")
+    async def run_check(check_id: str):
         # Find the check
         check = next((c for c in checks if c["id"] == check_id), None)
         if not check:
-            return jsonify({"error": "Check not found"}), 404
+            raise HTTPException(status_code=404, detail="Check not found")
         
         # Create a mock result
         result = {
@@ -125,11 +137,11 @@ def main():
             "executed_at": "2025-04-01T00:00:00Z"
         }
         results.append(result)
-        return jsonify(result)
+        return result
     
-    @app.route('/api/v1/results')
-    def get_results():
-        return jsonify({
+    @app.get("/api/v1/results")
+    async def get_results():
+        return {
             "results": results,
             "pagination": {
                 "page": 1,
@@ -137,10 +149,29 @@ def main():
                 "total": len(results),
                 "pages": 1
             }
-        })
+        }
+    
+    # Root endpoint showing API info and available endpoints
+    @app.get("/")
+    async def root():
+        return {
+            "name": "MonitorPy API",
+            "version": "1.0.0",
+            "docs": "/docs",
+            "redoc": "/redoc",
+            "endpoints": [
+                "/api/v1/health",
+                "/api/v1/plugins",
+                "/api/v1/checks",
+                "/api/v1/results"
+            ]
+        }
     
     print(f"Starting Mock MonitorPy API on {args.host}:{args.port}...")
-    app.run(host=args.host, port=args.port, debug=args.debug)
+    print(f"API documentation available at http://{args.host}:{args.port}/docs")
+    
+    # Run the FastAPI app with Uvicorn
+    uvicorn.run(app, host=args.host, port=args.port, reload=args.reload)
 
 if __name__ == "__main__":
     main()
