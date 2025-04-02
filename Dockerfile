@@ -81,7 +81,10 @@ EOF
 RUN mkdir -p /data && \
     mkdir -p /var/lib/redis && \
     chown -R redis:redis /var/lib/redis && \
-    chmod 770 /var/lib/redis
+    chmod 770 /var/lib/redis && \
+    # Create a symbolic link from /app/monitorpy.db to /data/monitorpy.db
+    # This ensures the DB is accessible from both locations
+    ln -sf /data/monitorpy.db /app/monitorpy.db
 
 # Expose port
 EXPOSE 8000
