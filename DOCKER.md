@@ -28,6 +28,12 @@ docker pull bonzodock/monitorpy:v0.1.0
 docker run -p 8000:8000 -v monitorpy_data:/data bonzodock/monitorpy:latest
 ```
 
+The container automatically:
+- Creates a default admin user (admin@example.com / adminpassword)
+- Generates an API key for authentication
+- Displays these credentials at startup
+- Ensures database files are properly handled
+
 ### With Environment Variables
 
 ```bash
