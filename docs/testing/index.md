@@ -23,6 +23,9 @@ Tests are organized in the `tests/` directory at the project root, with separate
 - `tests/test_ssl_cert_check.py`: Tests for the SSL certificate monitoring plugin
 - `tests/test_mail_server.py`: Tests for the mail server monitoring plugin
 - `tests/test_batch_runner.py`: Tests for the parallel execution functionality
+- `tests/test_fastapi.py`: Tests for the FastAPI implementation (unauthenticated endpoints)
+- `tests/test_fastapi_auth.py`: Tests for the FastAPI authenticated endpoints
+- `tests/conftest.py`: Pytest fixtures for FastAPI testing
 
 As new plugins are added, corresponding test files should be created following the same patterns.
 
@@ -46,6 +49,9 @@ pytest --cov=monitorpy tests/
 # Run tests for parallel execution
 pytest tests/test_batch_runner.py
 
+# Run FastAPI tests
+pytest tests/test_fastapi*.py
+
 # Run with specific markers
 pytest tests/ -m "not slow"
 ```
@@ -58,6 +64,7 @@ For more detailed information about specific test suites:
 - [Website Plugin Tests](website_plugin_tests.md)
 - [SSL Certificate Plugin Tests](ssl_plugin_tests.md)
 - [Mail Server Plugin Tests](mail_plugin_tests.md)
+- [FastAPI Tests](fastapi_tests.md)
 
 ## Writing Tests for New Plugins
 

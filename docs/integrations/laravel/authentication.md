@@ -9,6 +9,13 @@ MonitorPy supports two authentication methods:
 1. **JWT Authentication**: Token-based authentication using JSON Web Tokens
 2. **API Key Authentication**: Simple API key authentication for services and automation
 
+## User Roles
+
+MonitorPy has two types of users:
+
+1. **Regular Users**: Can access monitoring features but cannot manage other users
+2. **Admin Users**: Have full access, including user management capabilities
+
 ## JWT Authentication
 
 JWT is the recommended authentication method for user-facing applications.
@@ -203,10 +210,20 @@ For automated tasks or service-to-service communication, you can use API keys.
 
 ### Creating an API Key
 
-API keys can be created in the MonitorPy dashboard or via the API:
+API keys are managed by admin users through the user management API. There are two ways to generate API keys:
+
+#### 1. For your own user:
 
 ```
-POST /auth/api-keys
+GET /api/v1/users/me
+```
+
+This will return your current user information, including your API key.
+
+#### 2. For other users (Admin only):
+
+```
+POST /api/v1/users/{user_id}/api-key
 ```
 
 **Headers:**
@@ -214,28 +231,20 @@ POST /auth/api-keys
 Authorization: Bearer your_jwt_token
 ```
 
-**Request Body:**
-```json
-{
-  "name": "Laravel Integration",
-  "expires_at": "2024-12-31T23:59:59Z"  // Optional
-}
-```
-
 **Response Example:**
 ```json
 {
-  "status": "success",
-  "message": "API key created successfully",
-  "data": {
-    "id": 5,
-    "name": "Laravel Integration",
-    "key": "mp_api_b8f7a9c2d6e5f0...",  // Note: shown only once
-    "created_at": "2023-05-31T12:30:45Z",
-    "expires_at": "2024-12-31T23:59:59Z"
-  }
+  "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  "username": "user123",
+  "email": "user@example.com",
+  "is_admin": false,
+  "created_at": "2023-05-31T12:30:45Z",
+  "updated_at": "2023-05-31T12:30:45Z",
+  "api_key": "45a201ab-b8f7-4c2d-aeef-3d449c2b78f9"
 }
 ```
+
+> **Note:** API keys are shown only once when generated. Make sure to save the key securely.
 
 ### Using API Keys in Laravel
 
@@ -261,11 +270,39 @@ class MonitorPyApiService
     
     public function request($method, $endpoint, $data = [])
     {
+        // The MonitorPy API accepts the API key in multiple formats
+        // The X-API-Key header is the recommended approach
         $response = Http::withHeaders([
             'X-API-Key' => $this->apiKey,
+            // Alternatively: 'Authorization' => "Bearer {$this->apiKey}"
         ])->$method("{$this->baseUrl}{$endpoint}", $data);
             
         return $response->json();
+    }
+    
+    /**
+     * Check if the current user is an admin
+     * 
+     * @return bool
+     */
+    public function isAdmin()
+    {
+        try {
+            $user = $this->request('get', '/users/me');
+            return $user['is_admin'] ?? false;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Access user management features (admin only)
+     * 
+     * @return array
+     */
+    public function listUsers()
+    {
+        return $this->request('get', '/users');
     }
 }
 ```
@@ -281,6 +318,12 @@ class MonitorPyApiService
 4. **Implement caching**: Cache tokens to reduce authentication requests.
 
 5. **Use environment variables**: Store API URLs and keys in environment variables.
+
+6. **Check user roles**: Verify admin status before attempting admin-only operations.
+
+7. **Limit admin users**: Only create admin users when necessary, as they have full system access.
+
+8. **Rotate API keys**: Periodically generate new API keys for enhanced security.
 
 ## Middleware Example
 

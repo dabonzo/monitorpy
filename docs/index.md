@@ -61,15 +61,18 @@ MonitorPy provides a powerful command-line interface for all monitoring function
 
 - [Advanced Configuration Guide](reference/advanced_configuration.md) - Comprehensive configuration options and techniques
 - [Configuration Reference](reference/configuration.md) - Complete configuration options
+- [User Management](reference/user_management.md) - Managing users and API authentication
+- [Redis Integration](reference/redis_usage.md) - Using Redis for caching and background tasks
 - [CLI Reference](reference/cli_commands.md) - All command-line options
 - [Examples Reference](reference/examples.md) - Common usage patterns
 
 ## Development
 
-- [Architecture](development/architecture.md) - System architecture overview
+- [Architecture](development/architecture_notes.md) - System architecture overview
+- [API Modernization](development/api_modernization.md) - FastAPI implementation details
 - [Plugin System](development/plugin_system.md) - How the plugin system works
 - [Docker Usage](development/docker_usage.md) - Using MonitorPy with Docker
-- [Testing](development/testing/index.md) - Testing the monitoring system
+- [Testing](testing/index.md) - Testing the monitoring system
 
 ## Project Information
 

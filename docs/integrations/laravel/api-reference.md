@@ -7,7 +7,7 @@ This document provides detailed information about the MonitorPy API endpoints, r
 All API endpoints are relative to the base MonitorPy API URL:
 
 ```
-http://your-monitorpy-server:5000
+http://your-monitorpy-server:8000
 ```
 
 ## Authentication
@@ -466,23 +466,166 @@ Returns detailed information about a specific check result.
 #### Current User
 
 ```
-GET /user
+GET /api/v1/users/me
 ```
 
-Returns information about the currently authenticated user.
+Returns information about the currently authenticated user, including their API key.
 
 **Response Example:**
 ```json
 {
-  "status": "success",
-  "data": {
-    "id": 1,
-    "name": "Admin User",
+  "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+  "username": "admin",
+  "email": "admin@example.com",
+  "is_admin": true,
+  "api_key": "45a201ab-b8f7-4c2d-aeef-3d449c2b78f9",
+  "created_at": "2023-01-15T08:30:00Z",
+  "updated_at": "2023-05-20T14:22:10Z"
+}
+```
+
+#### List Users (Admin Only)
+
+```
+GET /api/v1/users
+```
+
+Returns a list of all users in the system. This endpoint requires admin privileges.
+
+**Parameters:**
+- `?skip=0` - Number of records to skip
+- `?limit=100` - Maximum number of records to return
+
+**Response Example:**
+```json
+[
+  {
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "username": "admin",
     "email": "admin@example.com",
-    "role": "admin",
+    "is_admin": true,
     "created_at": "2023-01-15T08:30:00Z",
     "updated_at": "2023-05-20T14:22:10Z"
+  },
+  {
+    "id": "a97cc10b-32cc-1234-b456-9e02b2c3d123",
+    "username": "monitor",
+    "email": "monitor@example.com",
+    "is_admin": false,
+    "created_at": "2023-02-20T10:15:30Z",
+    "updated_at": "2023-05-25T09:45:22Z"
   }
+]
+```
+
+#### Get User Details (Admin Only)
+
+```
+GET /api/v1/users/{user_id}
+```
+
+Returns detailed information about a specific user. This endpoint requires admin privileges.
+
+**Response Example:**
+```json
+{
+  "id": "a97cc10b-32cc-1234-b456-9e02b2c3d123",
+  "username": "monitor",
+  "email": "monitor@example.com",
+  "is_admin": false,
+  "created_at": "2023-02-20T10:15:30Z",
+  "updated_at": "2023-05-25T09:45:22Z"
+}
+```
+
+#### Create User (Admin Only)
+
+```
+POST /api/v1/users
+```
+
+Creates a new user. This endpoint requires admin privileges.
+
+**Request Body:**
+```json
+{
+  "username": "newuser",
+  "email": "newuser@example.com",
+  "password": "secure_password",
+  "is_admin": false
+}
+```
+
+**Response Example:**
+```json
+{
+  "id": "b87dc10b-12cc-5678-c789-1e02b2c3d456",
+  "username": "newuser",
+  "email": "newuser@example.com",
+  "is_admin": false,
+  "created_at": "2023-06-01T15:30:00Z",
+  "updated_at": "2023-06-01T15:30:00Z"
+}
+```
+
+#### Update User (Admin Only)
+
+```
+PUT /api/v1/users/{user_id}
+```
+
+Updates an existing user. This endpoint requires admin privileges.
+
+**Request Body:**
+```json
+{
+  "username": "updated_username",
+  "email": "updated_email@example.com",
+  "password": "new_password",
+  "is_admin": true
+}
+```
+
+**Response Example:**
+```json
+{
+  "id": "b87dc10b-12cc-5678-c789-1e02b2c3d456",
+  "username": "updated_username",
+  "email": "updated_email@example.com",
+  "is_admin": true,
+  "created_at": "2023-06-01T15:30:00Z",
+  "updated_at": "2023-06-01T16:45:00Z"
+}
+```
+
+#### Delete User (Admin Only)
+
+```
+DELETE /api/v1/users/{user_id}
+```
+
+Deletes a user. This endpoint requires admin privileges.
+
+**Response Status:** 204 No Content
+
+#### Generate API Key (Admin Only)
+
+```
+POST /api/v1/users/{user_id}/api-key
+```
+
+Generates a new API key for a user. This endpoint requires admin privileges.
+
+**Response Example:**
+```json
+{
+  "id": "b87dc10b-12cc-5678-c789-1e02b2c3d456",
+  "username": "updated_username",
+  "email": "updated_email@example.com",
+  "is_admin": true,
+  "api_key": "98f7e1cd-a6b5-4d3c-bfe2-2a1b9c8d7e6f",
+  "created_at": "2023-06-01T15:30:00Z",
+  "updated_at": "2023-06-01T17:20:00Z"
 }
 ```
 

@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from monitorpy.fastapi_api import __version__
 from monitorpy.fastapi_api.config import settings
 from monitorpy.fastapi_api.database import engine, Base
-from monitorpy.fastapi_api.routes import checks, health, plugins, results, batch, auth
+from monitorpy.fastapi_api.routes import checks, health, plugins, results, batch, auth, users
 from monitorpy.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -90,6 +90,12 @@ def create_app() -> FastAPI:
         tags=["batch"],
     )
     
+    app.include_router(
+        users.router,
+        prefix=f"{settings.API_V1_PREFIX}/users",
+        tags=["users"],
+    )
+    
     @app.get("/")
     async def root():
         """Root endpoint returning API information."""
@@ -104,7 +110,8 @@ def create_app() -> FastAPI:
                 f"{settings.API_V1_PREFIX}/plugins",
                 f"{settings.API_V1_PREFIX}/checks",
                 f"{settings.API_V1_PREFIX}/results",
-                f"{settings.API_V1_PREFIX}/batch"
+                f"{settings.API_V1_PREFIX}/batch",
+                f"{settings.API_V1_PREFIX}/users"
             ]
         }
     
