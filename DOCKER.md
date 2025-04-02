@@ -7,11 +7,17 @@ This guide explains how to use MonitorPy with Docker.
 The easiest way to get started is to use the pre-built Docker image:
 
 ```bash
-# Pull the image
+# Pull the latest image from GitHub Container Registry
 docker pull ghcr.io/dabonzo/monitorpy:latest
 
-# Or if you prefer Docker Hub
+# Pull a specific version from GitHub Container Registry
+docker pull ghcr.io/dabonzo/monitorpy:v0.1.0
+
+# Pull the latest image from Docker Hub
 docker pull dabonzo/monitorpy:latest
+
+# Pull a specific version from Docker Hub
+docker pull dabonzo/monitorpy:v0.1.0
 ```
 
 ## Running with Docker
@@ -116,9 +122,24 @@ To trigger a new image build:
 git push origin main
 
 # For a versioned release:
-git tag v1.0.0
-git push origin v1.0.0
+git tag v0.1.0
+git push origin v0.1.0
 ```
+
+### Available Tags
+
+The following tags are available for MonitorPy images:
+
+| Tag Format | Example | Description |
+|------------|---------|-------------|
+| `latest` | `dabonzo/monitorpy:latest` | Most recent build from main branch |
+| Full version | `dabonzo/monitorpy:v0.1.0` | Specific version release |
+| Minor version | `dabonzo/monitorpy:v0.1` | Latest patch in minor version |
+| Major version | `dabonzo/monitorpy:v0` | Latest minor in major version |
+| Git SHA | `dabonzo/monitorpy:sha-abc123` | Specific commit build |
+| Branch name | `dabonzo/monitorpy:main` | Latest from specific branch |
+
+The same tag formats are available for GitHub Container Registry images (`ghcr.io/dabonzo/monitorpy`).
 
 ## Testing the API
 
