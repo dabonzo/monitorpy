@@ -7,7 +7,8 @@ This module provides configuration settings using Pydantic's BaseSettings.
 import os
 from typing import Optional
 
-from pydantic import BaseSettings, PostgresDsn, SqliteGsn, validator
+from pydantic import field_validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -21,8 +22,8 @@ class Settings(BaseSettings):
     # Database settings
     DATABASE_URL: Optional[str] = None
     
-    @validator("DATABASE_URL", pre=True)
-    def validate_database_url(cls, v, values):
+    @field_validator("DATABASE_URL", mode="before")
+    def validate_database_url(cls, v):
         """
         Validate and set default database URL.
         
@@ -45,11 +46,10 @@ class Settings(BaseSettings):
     USE_REDIS_CACHE: bool = os.getenv("USE_REDIS_CACHE", "true").lower() == "true"
     CACHE_EXPIRATION: int = int(os.getenv("CACHE_EXPIRATION", "300"))  # 5 minutes default
     
-    class Config:
-        """Pydantic config."""
-        
-        env_file = ".env"
-        case_sensitive = True
+    model_config = {
+        "env_file": ".env",
+        "case_sensitive": True
+    }
 
 
 # Create settings instance
