@@ -45,8 +45,8 @@ monitorpy_v2/                # Project root
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/monitorpy_v2.git
-cd monitorpy_v2
+git clone https://github.com/dabonzo/monitorpy.git
+cd monitorpy
 
 # Install in development mode
 pip install -e .
@@ -57,6 +57,25 @@ pip install -e .
 ```bash
 pip install monitorpy
 ```
+
+### Using Docker
+
+The easiest way to get started is with Docker:
+
+```bash
+# Pull from GitHub Container Registry
+docker pull ghcr.io/dabonzo/monitorpy:latest
+
+# Or from Docker Hub
+docker pull dabonzo/monitorpy:latest
+
+# Run the container
+docker run -p 8000:8000 ghcr.io/dabonzo/monitorpy:latest
+```
+
+MonitorPy images are automatically built and published to both GitHub Container Registry and Docker Hub whenever changes are pushed to the main branch or a new version tag is created.
+
+For more detailed Docker instructions, including environment variables and production best practices, see [DOCKER.md](DOCKER.md)
 
 ## Quick Start
 

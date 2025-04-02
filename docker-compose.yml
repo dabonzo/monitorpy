@@ -24,7 +24,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: docker/api/Dockerfile
+      dockerfile: Dockerfile  # Using the production-optimized Dockerfile
     ports:
       - "8000:8000"
     environment:
