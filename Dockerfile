@@ -204,7 +204,12 @@ fi
 
 # Continue with original command
 echo "Starting services..."
-exec "$@"
+# Check if arguments are empty, if so run supervisord
+if [ $# -eq 0 ]; then
+    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+else
+    exec "$@"
+fi
 EOF
 
 RUN chmod +x /entrypoint.sh
@@ -221,4 +226,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Command to run supervisor which will start both Redis and the app
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# No CMD needed - entrypoint will handle it
