@@ -196,7 +196,8 @@ python /app/init_admin.py
 if [ -f /data/admin_api_key.txt ]; then
     echo "----------------------------------------"
     echo "Admin credentials created!"
-    cat /data/admin_api_key.txt
+    grep "Admin API Key:" /data/admin_api_key.txt
+    echo ""
     echo "Username: admin"
     echo "Password: adminpassword"
     echo "----------------------------------------"
@@ -204,12 +205,9 @@ fi
 
 # Continue with original command
 echo "Starting services..."
-# Check if arguments are empty, if so run supervisord
-if [ $# -eq 0 ]; then
-    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
-else
-    exec "$@"
-fi
+
+# Always run supervisord by default
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 EOF
 
 RUN chmod +x /entrypoint.sh
