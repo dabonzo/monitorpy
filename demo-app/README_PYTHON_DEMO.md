@@ -59,13 +59,14 @@ Check specific hosts every 30 seconds:
 ./run_demo.sh --hosts=github.com,google.com,cloudflare.com --interval=30
 ```
 
-Use authentication:
+Use default Docker container authentication (recommended):
 
 ```bash
-./run_demo.sh --email=user@example.com --password=mysecretpassword
+# The Docker container creates a default admin user
+./run_demo.sh --email=admin@example.com --password=adminpassword
 ```
 
-Use API key authentication:
+Use API key authentication (displayed at container startup):
 
 ```bash
 ./run_demo.sh --api-key=your-api-key-here

@@ -18,9 +18,25 @@ MonitorPy supports two user roles:
 - **Regular Users**: Can access monitoring features, but cannot manage other users
 - **Admin Users**: Have full access, including user management capabilities
 
-## Creating the First Admin User
+## Admin User Management
 
-To create the first admin user, use the provided script:
+### Using Docker (Recommended)
+
+When using the Docker container, an admin user is automatically created on first startup:
+
+```bash
+docker run -p 8000:8000 bonzodock/monitorpy:latest
+```
+
+The container will display the login credentials:
+- Username: admin
+- Email: admin@example.com
+- Password: adminpassword
+- API Key: automatically generated and displayed at startup
+
+### Creating an Admin User Manually
+
+If you're not using Docker or need to create additional admin users, use the provided script:
 
 ```bash
 # Interactive usage

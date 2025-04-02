@@ -4,7 +4,23 @@ This guide explains how to deploy and use the MonitorPy API with Docker, making 
 
 ## Quick Start
 
-The MonitorPy project includes a ready-to-use Docker Compose configuration that sets up the API service, a database, and an administration interface.
+The MonitorPy project includes a ready-to-use Docker Compose configuration that sets up the API service, a database, Redis, and an administration interface.
+
+For the simplest deployment, use the pre-built Docker images:
+
+```bash
+# Use Docker Hub image
+docker run -p 8000:8000 bonzodock/monitorpy:latest
+
+# Or GitHub Container Registry
+docker run -p 8000:8000 ghcr.io/dabonzo/monitorpy:latest
+```
+
+The container automatically:
+- Creates a default admin user (admin@example.com / adminpassword)
+- Generates an API key for authentication 
+- Displays these credentials at startup
+- Sets up a SQLite database in a persistent volume
 
 ### Prerequisites
 

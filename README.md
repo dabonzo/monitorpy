@@ -71,6 +71,12 @@ docker pull bonzodock/monitorpy:latest
 
 # Run the container
 docker run -p 8000:8000 bonzodock/monitorpy:latest
+
+# Authentication is pre-configured with:
+# - Username: admin
+# - Email: admin@example.com
+# - Password: adminpassword
+# - API key: automatically generated and displayed at startup
 ```
 
 MonitorPy images are automatically built and published to both GitHub Container Registry and Docker Hub whenever changes are pushed to the main branch or a new version tag is created.
