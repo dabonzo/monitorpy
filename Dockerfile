@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Install additional dependencies for API
 RUN pip install --no-cache-dir fastapi uvicorn pydantic python-jose python-multipart \
-    sqlalchemy pyyaml redis passlib email-validator pydantic-settings
+    sqlalchemy pyyaml redis passlib email-validator pydantic-settings httpx
 
 # Create a smaller final image
 FROM python:3.10-slim
@@ -18,9 +18,9 @@ LABEL maintainer="dabonzo"
 LABEL description="MonitorPy - A plugin-based monitoring system"
 LABEL version="1.0.0"
 
-# Install Redis and Supervisor
+# Install Redis, Supervisor, and diagnostics tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    redis-server supervisor curl \
+    redis-server supervisor curl sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app directory
@@ -35,6 +35,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV REDIS_URL=redis://localhost:6379/0
 ENV USE_REDIS_CACHE=true
+ENV AUTH_REQUIRED=false
+ENV DISABLE_AUTH=true
+ENV DATABASE_URL=sqlite:////data/monitorpy.db
 
 # Copy installed packages from build stage
 COPY --from=build /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
@@ -45,6 +48,10 @@ COPY run_fastapi.py /app/
 COPY create_admin.py /app/
 COPY setup.py /app/
 COPY requirements.txt /app/
+COPY api_test.py /app/
+
+# Make the test script executable
+RUN chmod +x /app/api_test.py
 
 # Configure Supervisor
 RUN mkdir -p /etc/supervisor/conf.d
