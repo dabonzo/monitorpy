@@ -14,10 +14,10 @@ docker pull ghcr.io/dabonzo/monitorpy:latest
 docker pull ghcr.io/dabonzo/monitorpy:v0.1.0
 
 # Pull the latest image from Docker Hub
-docker pull dabonzo/monitorpy:latest
+docker pull bonzodock/monitorpy:latest
 
 # Pull a specific version from Docker Hub
-docker pull dabonzo/monitorpy:v0.1.0
+docker pull bonzodock/monitorpy:v0.1.0
 ```
 
 ## Running with Docker
@@ -25,7 +25,7 @@ docker pull dabonzo/monitorpy:v0.1.0
 ### Basic Usage
 
 ```bash
-docker run -p 8000:8000 -v monitorpy_data:/data ghcr.io/dabonzo/monitorpy:latest
+docker run -p 8000:8000 -v monitorpy_data:/data bonzodock/monitorpy:latest
 ```
 
 ### With Environment Variables
@@ -37,7 +37,7 @@ docker run -p 8000:8000 \
   -e JWT_SECRET_KEY=your_jwt_secret \
   -e AUTH_REQUIRED=true \
   -v monitorpy_data:/data \
-  ghcr.io/dabonzo/monitorpy:latest
+  bonzodock/monitorpy:latest
 ```
 
 ## Using with Docker Compose
@@ -132,12 +132,12 @@ The following tags are available for MonitorPy images:
 
 | Tag Format | Example | Description |
 |------------|---------|-------------|
-| `latest` | `dabonzo/monitorpy:latest` | Most recent build from main branch |
-| Full version | `dabonzo/monitorpy:v0.1.0` | Specific version release |
-| Minor version | `dabonzo/monitorpy:v0.1` | Latest patch in minor version |
-| Major version | `dabonzo/monitorpy:v0` | Latest minor in major version |
-| Git SHA | `dabonzo/monitorpy:sha-abc123` | Specific commit build |
-| Branch name | `dabonzo/monitorpy:main` | Latest from specific branch |
+| `latest` | `bonzodock/monitorpy:latest` | Most recent build from main branch |
+| Full version | `bonzodock/monitorpy:v0.1.0` | Specific version release |
+| Minor version | `bonzodock/monitorpy:v0.1` | Latest patch in minor version |
+| Major version | `bonzodock/monitorpy:v0` | Latest minor in major version |
+| Git SHA | `bonzodock/monitorpy:sha-abc123` | Specific commit build |
+| Branch name | `bonzodock/monitorpy:main` | Latest from specific branch |
 
 The same tag formats are available for GitHub Container Registry images (`ghcr.io/dabonzo/monitorpy`).
 

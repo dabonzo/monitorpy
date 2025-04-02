@@ -67,10 +67,10 @@ The easiest way to get started is with Docker:
 docker pull ghcr.io/dabonzo/monitorpy:latest
 
 # Or from Docker Hub
-docker pull dabonzo/monitorpy:latest
+docker pull bonzodock/monitorpy:latest
 
 # Run the container
-docker run -p 8000:8000 ghcr.io/dabonzo/monitorpy:latest
+docker run -p 8000:8000 bonzodock/monitorpy:latest
 ```
 
 MonitorPy images are automatically built and published to both GitHub Container Registry and Docker Hub whenever changes are pushed to the main branch or a new version tag is created.

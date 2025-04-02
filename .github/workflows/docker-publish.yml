@@ -59,7 +59,7 @@ jobs:
         id: meta-dockerhub
         uses: docker/metadata-action@v4
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/monitorpy
+          images: bonzodock/monitorpy
           tags: |
             type=schedule
             type=ref,event=branch
