@@ -199,6 +199,7 @@ if [ -f /data/admin_api_key.txt ]; then
     grep "Admin API Key:" /data/admin_api_key.txt
     echo ""
     echo "Username: admin"
+    echo "Email: admin@example.com"
     echo "Password: adminpassword"
     echo "----------------------------------------"
 fi
