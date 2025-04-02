@@ -44,7 +44,7 @@ services:
       - USE_REDIS_CACHE=true
       - CACHE_EXPIRATION=300  # Cache expiration in seconds
     volumes:
-      - ./:/app
+      - ./monitorpy:/app/monitorpy
       - monitorpy_data:/data
     depends_on:
       - db
