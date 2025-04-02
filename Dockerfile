@@ -48,10 +48,6 @@ COPY run_fastapi.py /app/
 COPY create_admin.py /app/
 COPY setup.py /app/
 COPY requirements.txt /app/
-COPY api_test.py /app/
-
-# Make the test script executable
-RUN chmod +x /app/api_test.py
 
 # Configure Supervisor
 RUN mkdir -p /etc/supervisor/conf.d
